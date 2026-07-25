@@ -97,11 +97,14 @@ namespace ThemeManager {
     CalcThemePath(const Metadata& meta);
 
     std::filesystem::path
-    CalcUThemePath(const std::string& slug,
-                   const std::string& hexId);
+    CalcUThemePath();
 
     std::filesystem::path
     CalcUThemePath(const std::string& url);
+
+    std::filesystem::path
+    CalcUThemePath(const std::string& name,
+                   const std::string& id);
 
     void
     RefreshInstalledThemes();

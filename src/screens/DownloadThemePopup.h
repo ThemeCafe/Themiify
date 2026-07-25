@@ -17,6 +17,8 @@ namespace DownloadThemePopup {
 
     void open(const std::string& url);
 
+    void open(const ThemezerAPI::WiiuInstallThemeLookup &theme);
+
     void process_ui();
 
 } // namespace DownloadThemePopup

@@ -29,6 +29,8 @@ using std::cerr;
 using std::endl;
 using namespace std::literals;
 
+// TODO: use glz::lazy_json instead of glz::generic.
+
 namespace graphql {
 
     std::string user_agent;

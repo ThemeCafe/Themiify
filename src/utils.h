@@ -75,4 +75,5 @@ split(const std::string& input,
 [[nodiscard]]
 std::string
 join(const std::vector<std::string>& tokens,
-     const std::string& separator = "");
+     const std::string& separator = "",
+     bool compress = true);

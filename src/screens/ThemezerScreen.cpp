@@ -58,15 +58,12 @@ namespace ThemezerScreen {
     SortOrder order = SortOrder::DESC;
 
     std::string query;
-    std::string quickid_query;
+    std::string quick_id_query;
 
-    bool fetching_theme_by_id = false;
-    bool exact_id_mode = false;
     bool scroll_to_top = false;
 
     std::optional<PageInfo> page_info;
     std::optional<WiiuThemeSmallVec> themes;
-    std::optional<WiiuThemeSmall> exact_theme;
 
     SDL_Texture* themezer_logo = nullptr;
 
@@ -104,34 +101,26 @@ namespace ThemezerScreen {
         return small;
     }
 
-    void fetch_theme_by_id(const std::string& hex_id) {
-        fetching_theme_by_id = true;
-        exact_id_mode = true;
-        exact_theme.reset();
-
-        // TODO: should have an error handler too
-        ThemezerAPI::wiiu::theme(
-            hex_id,
-            [](const WiiuThemeFull& full_theme) {
-                cout << "Got exact theme by ID!" << endl;
-
-                exact_theme = full_to_small(full_theme);
-                fetching_theme_by_id = false;
-            }
-        );
+    void
+    fetch_theme_by_quick_id(const std::string& quick_id) {
+        // Note: start a download imediately from the response, don't show anything.
+        ThemezerAPI::wiiu::lookupByQuickId(
+            quick_id,
+            [](const ThemezerAPI::WiiuInstallThemeLookup& theme)
+            {
+                DownloadThemePopup::open(theme);
+            });
     }
 
     void fetch_page(unsigned new_page) {
         if (!new_page)
             return;
 
-        page = new_page;
-
         // TODO: should have an error handler too.
         ThemezerAPI::wiiu::themes({
                 .paginationArgs = {
                     .limit = 21,
-                    .page = page,
+                    .page = new_page,
                 },
                 .sort = sort,
                 .order = order,
@@ -140,6 +129,7 @@ namespace ThemezerScreen {
             [](const WiiuThemeSmallVec& new_themes,
                const PageInfo& new_page_info)
             {
+                page = new_page_info.page;
                 page_info = new_page_info;
                 themes = new_themes;
 
@@ -287,8 +277,8 @@ namespace ThemezerScreen {
         | comes after.                                                                   |
         `-------------------------------------------------------------------------------*/
 
-        const std::string quickid_label = "QuickID";
-        const auto quickid_size = ImGui::CalcTextSize(quickid_label) + 2 * style.FramePadding;
+        const std::string quick_id_label = "QuickID";
+        const auto quick_id_size = ImGui::CalcTextSize(quick_id_label) + 2 * style.FramePadding;
 
         const std::string qr_label = ICON_FA_QRCODE;
         const auto qr_size = ImGui::CalcTextSize(qr_label) + 2 * style.FramePadding;
@@ -305,9 +295,7 @@ namespace ThemezerScreen {
         const auto nav_next_size = ImGui::CalcTextSize(nav_next_label) + 2 * style.FramePadding;
 
         std::string nav_page_label;
-        if (exact_id_mode) {
-            nav_page_label = "";
-        } else if (page_info) {
+        if (page_info) {
             nav_page_label =
                 "Page "s
                 + std::to_string(page_info->page)
@@ -320,7 +308,7 @@ namespace ThemezerScreen {
         const float search_width =
             ImGui::GetContentRegionAvail().x
             - space
-            - quickid_size.x
+            - quick_id_size.x
             - space
             - qr_size.x
             - space
@@ -340,11 +328,6 @@ namespace ThemezerScreen {
             ImGui::SetNextItemWidth(search_width);
             if (ImGui::InputTextWithHint("##network_search"s, "Search..."s, query)) {
                 cout << "Searching: " << query << endl;
-
-                exact_id_mode = false;
-                exact_theme.reset();
-                fetching_theme_by_id = false;
-
                 fetch_page(1);
             }
         }
@@ -354,12 +337,12 @@ namespace ThemezerScreen {
         {
             Disabled disable_if{themezer_busy};
 
-            ImGui::SetNextItemWidth(quickid_size.x);
-            if (ImGui::InputTextWithHint("##id_search"s, quickid_label, quickid_query)) {
-                if (quickid_query.starts_with("T") || quickid_query.starts_with("t")) {
-                    cout << "Searching QuickID: " << quickid_query << endl;
-                    std::string hexId = as_upper_case(quickid_query.substr(1));
-                    fetch_theme_by_id(hexId);
+            ImGui::SetNextItemWidth(quick_id_size.x);
+            if (ImGui::InputTextWithHint("##quick_id_search"s, quick_id_label, quick_id_query)) {
+                if (!quick_id_query.empty()) {
+                    cout << "Searching QuickId: " << quick_id_query << endl;
+                    quick_id_query = as_upper_case(quick_id_query);
+                    fetch_theme_by_quick_id(quick_id_query);
                 }
             }
         }
@@ -380,11 +363,6 @@ namespace ThemezerScreen {
                     if (ImGui::Selectable(sort_to_label(new_sort),
                                           new_sort == sort)) {
                         sort = new_sort;
-
-                        exact_id_mode = false;
-                        exact_theme.reset();
-                        fetching_theme_by_id = false;
-
                         fetch_page(1);
                     }
                 }
@@ -397,11 +375,6 @@ namespace ThemezerScreen {
             Disabled disable_if{themezer_busy};
             if (ImGui::Button(reverse_label, reverse_size)) {
                 order = order == SortOrder::ASC ? SortOrder::DESC : SortOrder::ASC;
-
-                exact_id_mode = false;
-                exact_theme.reset();
-                fetching_theme_by_id = false;
-
                 fetch_page(1);
             }
         }
@@ -410,7 +383,7 @@ namespace ThemezerScreen {
 
         // Navigation controls
         {
-            Disabled disabled_if{themezer_busy || exact_id_mode};
+            Disabled disabled_if{themezer_busy};
 
             {
                 bool first_page = true;
@@ -483,46 +456,18 @@ namespace ThemezerScreen {
                         const ImVec2 inner_size = {320, 260};
                         const ImVec2 padding = {12, 12};
 
-                        if (exact_id_mode) {
-                            if (fetching_theme_by_id) {
-                                ImGui::Text("Searching by exact Themezer ID...");
-                                if (ImGui::Button("Cancel Search")) {
-                                    exact_id_mode = false;
-                                    query.clear();
-                                    quickid_query.clear();
-                                    fetch_page(1);
-                                }
-                            }
-                            else if (exact_theme) {
-                                show(*exact_theme, inner_size, padding);
-                                ImGui::Spacing();
-                                if (ImGui::Button("Clear Search")) {
-                                    exact_id_mode = false;
-                                    query.clear();
-                                    quickid_query.clear();
-                                    fetch_page(1);
-                                }
-                            }
-                            else {
-                                ImGui::Text("No theme found for this Themezer ID.");
-                            }
+                        if (!themes) {
+                            ImGui::Text("Waiting for Themezer to respond...");
                         }
                         else {
-                            auto& new_themes = themes;
-
-                            if (!new_themes) {
-                                ImGui::Text("Waiting for Themezer to respond...");
-                            }
-                            else {
-                                const ImVec2 grid_start_pos = ImGui::GetCursorPos();
-                                const ImVec2 outer_size = inner_size + 2 * padding;
-                                const ImVec2 spacing = {18, 18};
-                                for (auto [idx, theme] : *new_themes | std::views::enumerate) {
-                                    ImVec2 grid_pos = { float(idx % 3), float(idx / 3) };
-                                    ImVec2 pos = grid_pos * (outer_size + spacing);
-                                    ImGui::SetCursorPos(grid_start_pos + pos);
-                                    show(theme, inner_size, padding);
-                                }
+                            const ImVec2 grid_start_pos = ImGui::GetCursorPos();
+                            const ImVec2 outer_size = inner_size + 2 * padding;
+                            const ImVec2 spacing = {18, 18};
+                            for (auto [idx, theme] : *themes | std::views::enumerate) {
+                                ImVec2 grid_pos = { float(idx % 3), float(idx / 3) };
+                                ImVec2 pos = grid_pos * (outer_size + spacing);
+                                ImGui::SetCursorPos(grid_start_pos + pos);
+                                show(theme, inner_size, padding);
                             }
                         }
                     }

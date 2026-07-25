@@ -96,7 +96,7 @@ namespace ThemezerAPI {
     } // namespace
 
     void wiiu::themes(const ThemesSpec& spec,
-                      themes_function_t callback)
+                      ThemesFunction callback)
     {
         TRACE_FUNC;
 
@@ -105,7 +105,7 @@ namespace ThemezerAPI {
             return;
         }
 
-        const std::string query = R"(
+        static const std::string query = R"(
 query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String, $sort: ItemSort) {
   wiiu {
     themes(order: $order, paginationArgs: $paginationArgs, query: $query, sort: $sort) {
@@ -151,24 +151,17 @@ query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String
             auto& nodes = themes_obj.at("nodes").get<glz::generic::array_t>();
             WiiuThemeSmallVec themes(nodes.size());
 
-#ifdef __cpp_lib_ranges_zip
             for (auto [theme, node] : std::views::zip(themes, nodes)) {
                 if (auto error = glz::read_json(theme, node))
                     throw std::runtime_error{"glz::read_json() failed: "
-                                             + glz::format_error(error)};
+                                             + glz::format_error(error, node)};
             }
-#else
-            for (std::size_t i = 0; i < nodes.size(); ++i) {
-                if (auto error = glz::read_json(themes[i], nodes[i]))
-                    throw std::runtime_error{"glz::read_json() failed: "
-                                             + glz::format_error(error)};
-            }
-#endif
 
+            auto& pageInfo_obj = themes_obj.at("pageInfo");
             PageInfo pageInfo;
-            if (auto error = glz::read_json(pageInfo, themes_obj.at("pageInfo")))
+            if (auto error = glz::read_json(pageInfo, pageInfo_obj))
                 throw std::runtime_error{"glz::read_json() failed: "
-                                         + glz::format_error(error)};
+                                         + glz::format_error(error, pageInfo_obj)};
 
             if (callback)
                 callback(themes, pageInfo);
@@ -185,7 +178,7 @@ query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String
     }
 
     void wiiu::theme(const std::string& hexId,
-                     theme_function_t callback)
+                     ThemeFunction callback)
     {
         TRACE_FUNC;
 
@@ -194,8 +187,8 @@ query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String
             return;
         }
 
-        const std::string query = R"(
-query($hexId: String!) {
+        static const std::string query = R"(
+query Theme($hexId: String!) {
   wiiu {
     theme(hexId: $hexId) {
       uuid
@@ -257,10 +250,7 @@ query($hexId: String!) {
             auto result = glz::read_json<WiiuThemeFull>(theme_obj);
             if (!result)
                 throw std::runtime_error{"glz::read_json() failed: "s
-                                         + glz::format_error(result.error())
-                                         + "\n<<<"s
-                                         + glz::prettify_json(data.dump().value_or("{\"dump failed!\"}"))
-                                         + ">>>"s};
+                                         + glz::format_error(result.error(), theme_obj)};
 
             if (callback)
                 callback(*result);
@@ -276,4 +266,65 @@ query($hexId: String!) {
                            common_exception_handler);
     }
 
+
+    void
+    wiiu::lookupByQuickId(const std::string& quickId,
+                          LookupByQuickIdFunction callback)
+    {
+        TRACE_FUNC;
+        if (busy) {
+            cerr << "ERROR: ThemezerAPI is busy" << endl;
+            return;
+        }
+
+        static const std::string query = R"(
+query LookupByQuickId($quickId: String!) {
+  wiiu {
+    lookupByQuickId(quickId: $quickId) {
+      downloadUrl
+      createdAt
+      name
+      quickId
+      uuid
+    }
+  }
 }
+)";
+
+        glz::generic variables;
+        variables["quickId"] = quickId;
+
+        auto data_handler =
+            [callback = std::move(callback)](const glz::generic& data)
+                mutable
+            {
+                TRACE_FUNC;
+
+                busy = false;
+
+                auto& wiiu_obj = data.at("wiiu");
+                auto& lookup_obj = wiiu_obj.at("lookupByQuickId");
+
+                if (lookup_obj.is_null())
+                    throw std::runtime_error{"no theme found"};
+
+                auto result = glz::read_json<WiiuInstallThemeLookup>(lookup_obj);
+                if (!result)
+                    throw std::runtime_error{"glz::read_json() failed: "s
+                                             + glz::format_error(result.error(), lookup_obj)};
+
+                if (callback)
+                    callback(*result);
+            };
+
+        busy = true;
+
+        graphql::get_async(url,
+                           query,
+                           variables,
+                           std::move(data_handler),
+                           common_errors_handler,
+                           common_exception_handler);
+    }
+
+} // namespace ThemezerAPI

@@ -25,6 +25,15 @@ namespace ThemezerAPI {
     }; // struct PageInfo
 
 
+    struct WiiuInstallThemeLookup {
+        std::string createdAt;
+        std::string downloadUrl;
+        std::string name;
+        std::string quickId;
+        std::string uuid;
+    }; // struct WiiuInstallThemeLookup
+
+
     struct WiiuThemeSmall {
         std::string uuid;
         std::string hexId;
@@ -135,9 +144,9 @@ namespace ThemezerAPI {
 
     namespace wiiu {
 
-        using themes_function_sig = void (const WiiuThemeSmallVec& themes,
-                                          const PageInfo& page_info);
-        using themes_function_t = std::move_only_function<themes_function_sig>;
+        using ThemesSignature = void (const WiiuThemeSmallVec& themes,
+                                      const PageInfo& page_info);
+        using ThemesFunction = std::move_only_function<ThemesSignature>;
 
         struct PaginationInput {
             unsigned    limit = 20;
@@ -153,17 +162,25 @@ namespace ThemezerAPI {
 
         void
         themes(const ThemesSpec& spec,
-               themes_function_t callback);
+               ThemesFunction callback);
 
 
 
-        using theme_function_sig = void(const WiiuThemeFull& theme);
-        using theme_function_t = std::move_only_function<theme_function_sig>;
-
+        using ThemeSignature = void(const WiiuThemeFull& theme);
+        using ThemeFunction = std::move_only_function<ThemeSignature>;
 
         void
         theme(const std::string& hexId,
-              theme_function_t callback);
+              ThemeFunction callback);
 
-    }
-}
+
+        using LookupByQuickIdSignature = void (const WiiuInstallThemeLookup& theme);
+        using LookupByQuickIdFunction = std::move_only_function<LookupByQuickIdSignature>;
+
+        void
+        lookupByQuickId(const std::string& quickId,
+                        LookupByQuickIdFunction callback);
+
+    } // namespace wiiu
+
+} // namespace ThemezerAPI

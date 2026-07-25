@@ -229,6 +229,16 @@ namespace DownloadThemePopup {
     }
 
     void
+    open(const ThemezerAPI::WiiuInstallThemeLookup &theme)
+    {
+        state = State::queued;
+        transfer_name = theme.name;
+        utheme_url = theme.downloadUrl;
+        utheme_filename = ThemeManager::CalcUThemePath(theme.name, theme.quickId);
+        error_message.clear();
+    }
+
+    void
     process_ui() {
         using namespace ImGui::RAII;
         if (state == State::hidden)

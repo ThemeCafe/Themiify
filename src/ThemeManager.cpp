@@ -899,17 +899,12 @@ namespace ThemeManager {
     }
 
     std::filesystem::path
-    CalcUThemePath(const std::string& slug,
-                   const std::string& hexId) {
-        std::string filename = slug;
-        if (!hexId.empty())
-            filename += "-" + hexId;
-
-        if (filename.empty())
-            filename = "no-slug-or-id"; // TODO: generate random name?
-
-        filename += ".utheme";
-
+    CalcUThemePath() {
+        auto now = std::chrono::system_clock::now();
+        auto today = std::chrono::floor<std::chrono::days>(now);
+        std::chrono::year_month_day date = today;
+        std::chrono::hh_mm_ss time{now - today};
+        std::string filename = std::format("download-{}-{}.utheme", date, time);
         return THEMES_ROOT / SanitizeElement(filename);
     }
 
@@ -923,12 +918,16 @@ namespace ThemeManager {
                 return THEMES_ROOT / SanitizeElement(filename);
             }
         }
+        return CalcUThemePath(); // generate filename using date and time
+    }
 
-        auto now = std::chrono::system_clock::now();
-        auto today = std::chrono::floor<std::chrono::days>(now);
-        std::chrono::year_month_day date = today;
-        std::chrono::hh_mm_ss time{now - today};
-        std::string filename = std::format("download-{}-{}.utheme", date, time);
+    std::filesystem::path
+    CalcUThemePath(const std::string& name,
+                   const std::string& id) {
+        std::string filename = join({name, id}, "-");
+        if (filename.empty())
+            return CalcUThemePath(); // generate filename using date and time
+        filename += ".utheme";
         return THEMES_ROOT / SanitizeElement(filename);
     }
 
