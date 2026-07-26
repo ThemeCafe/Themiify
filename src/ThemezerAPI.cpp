@@ -12,7 +12,9 @@
 #include <stdexcept>
 #include <utility>
 
-#include <glaze/glaze.hpp>
+#include <glaze/json/generic.hpp>
+#include <glaze/json/read.hpp>
+#include <glaze/json/write.hpp>
 
 #include "ThemezerAPI.h"
 #include "graphql.h"
@@ -76,7 +78,7 @@ namespace ThemezerAPI {
 
     namespace {
 
-        void common_errors_handler(const glz::generic& errors)
+        void common_errors_handler(const graphql::generic& errors)
         {
             busy = false;
 
@@ -141,14 +143,14 @@ query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String
             throw std::runtime_error{"glz::write_json() failed: "
                                      + glz::format_error(error)};
 
-        auto data_handler = [callback = std::move(callback)](const glz::generic& data) mutable
+        auto data_handler = [callback = std::move(callback)](const graphql::generic& data) mutable
         {
             busy = false;
 
             auto& wiiu_obj = data.at("wiiu");
             auto& themes_obj = wiiu_obj.at("themes");
 
-            auto& nodes = themes_obj.at("nodes").get<glz::generic::array_t>();
+            auto& nodes = themes_obj.at("nodes").get<graphql::generic::array_t>();
             WiiuThemeSmallVec themes(nodes.size());
 
             for (auto [theme, node] : std::views::zip(themes, nodes)) {
@@ -232,10 +234,10 @@ query Theme($hexId: String!) {
 }
 )";
 
-        glz::generic variables;
+        graphql::generic variables;
         variables["hexId"] = hexId;
 
-        auto data_handler = [callback = std::move(callback)](const glz::generic& data) mutable
+        auto data_handler = [callback = std::move(callback)](const graphql::generic& data) mutable
         {
             TRACE_FUNC;
 
@@ -291,11 +293,11 @@ query LookupByQuickId($quickId: String!) {
 }
 )";
 
-        glz::generic variables;
+        graphql::generic variables;
         variables["quickId"] = quickId;
 
         auto data_handler =
-            [callback = std::move(callback)](const glz::generic& data)
+            [callback = std::move(callback)](const graphql::generic& data)
                 mutable
             {
                 TRACE_FUNC;
