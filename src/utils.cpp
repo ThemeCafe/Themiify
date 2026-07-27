@@ -9,6 +9,7 @@
 
 #include <cctype>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <locale>
 #include <ranges>
@@ -214,5 +215,22 @@ join(const std::vector<std::string>& tokens,
 
     }
 
+    return result;
+}
+
+std::vector<char>
+load_file(const std::filesystem::path& filename) {
+    std::vector<char> result;
+    if (!exists(filename))
+        return {};
+    result.reserve(file_size(filename));
+    std::filebuf file;
+    if (file.open(filename,
+                  std::ios::in | std::ios::binary)) {
+        char buf[4096];
+        std::streamsize read;
+        while ((read = file.sgetn(buf, sizeof buf)) > 0)
+            result.append_range(std::span(buf, read));
+    }
     return result;
 }

@@ -77,3 +77,6 @@ std::string
 join(const std::vector<std::string>& tokens,
      const std::string& separator = "",
      bool compress = true);
+
+std::vector<char>
+load_file(const std::filesystem::path& filename);

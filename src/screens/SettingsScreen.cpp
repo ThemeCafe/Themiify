@@ -124,6 +124,11 @@ namespace SettingsScreen {
                 int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
                 Mix_VolumeMusic(mix_volume);
             }
+
+            if (Mix_PlayingMusic())
+                ImGui::FormatTextWrapped("Playing \"{}\" by \"{}\"",
+                                         Mix_GetMusicTitleTag(nullptr),
+                                         Mix_GetMusicArtistTag(nullptr));
         }
 
         void

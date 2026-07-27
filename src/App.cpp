@@ -263,23 +263,22 @@ namespace App {
         ProcUIRegisterCallback(PROCUI_CALLBACK_ACQUIRE, &procCallbackAcquire, nullptr, 1);
 
         // Start playing bg music, AFTER settings are initialized (through the ContentPanel).
-        {
-            std::filebuf music_filebuf;
-            if (music_filebuf.open("fs:/vol/content/sound/bgm.mp3",
-                                   std::ios::in | std::ios::binary)) {
-                char buf[4096];
-                std::streamsize read;
-                while ((read = music_filebuf.sgetn(buf, sizeof buf)) > 0)
-                    bgMusicData.append_range(std::span(buf, read));
-                auto rwops = SDL_RWFromConstMem(bgMusicData.data(), bgMusicData.size());
-                bgMusic = Mix_LoadMUS_RW(rwops, 1);
-                if (bgMusic)
-                    Mix_PlayMusic(bgMusic, -1);
-                else
-                    cerr << "Failed to load bgm: " << SDL_GetError() << endl;
-            } else {
-                cerr << "Failed to open bgm.mp3" << endl;
-            }
+        bgMusicData = load_file(THEMIIFY_ROOT / "bgm.mp3");
+        if (bgMusicData.empty())
+            bgMusicData = load_file(THEMIIFY_ROOT / "bgm.ogg");
+        if (bgMusicData.empty())
+            bgMusicData = load_file(THEMIIFY_ROOT / "bgm.opus");
+        if (bgMusicData.empty())
+            bgMusicData = load_file("fs:/vol/content/sound/bgm.mp3");
+        if (!bgMusicData.empty()) {
+            auto rwops = SDL_RWFromConstMem(bgMusicData.data(), bgMusicData.size());
+            bgMusic = Mix_LoadMUS_RW(rwops, 1);
+            if (bgMusic)
+                Mix_PlayMusic(bgMusic, -1);
+            else
+                cerr << "Failed to load bgm: " << SDL_GetError() << endl;
+        } else {
+            cerr << "No bgm found!" << endl;
         }
     }
 
@@ -290,6 +289,7 @@ namespace App {
             Mix_FreeMusic(bgMusic);
             bgMusic = nullptr;
         }
+        bgMusicData.clear();
 
         NavBar::finalize();
         ContentPanel::finalize();
