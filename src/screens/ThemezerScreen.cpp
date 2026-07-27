@@ -425,9 +425,7 @@ namespace ThemezerScreen {
 #ifdef DEBUG_BG_COLOR
             StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
 #endif
-            auto &style = ImGui::GetStyle();
-            // Remove horizontal padding.
-            StyleVar no_hori_padding{ImGuiStyleVar_WindowPadding, {0, style.WindowPadding.y}};
+            StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
             if (Child themezer_content{"ThemezerContent",
                                        {0, 0},
                                        ImGuiChildFlags_NavFlattened |
@@ -462,7 +460,7 @@ namespace ThemezerScreen {
                         else {
                             const ImVec2 grid_start_pos = ImGui::GetCursorPos();
                             const ImVec2 outer_size = inner_size + 2 * padding;
-                            const ImVec2 spacing = {18, 18};
+                            const ImVec2 spacing = {15, 15};
                             for (auto [idx, theme] : *themes | std::views::enumerate) {
                                 ImVec2 grid_pos = { float(idx % 3), float(idx / 3) };
                                 ImVec2 pos = grid_pos * (outer_size + spacing);

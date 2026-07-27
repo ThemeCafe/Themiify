@@ -267,11 +267,11 @@ namespace ManageThemesScreen {
                 2 * style.FramePadding.x;
 
             const std::string shuffle_label = "Shuffle";
+            const float checkbox_square_size = ImGui::GetFrameHeight();
             const float shuffle_width =
-                ImGui::CalcTextSize(shuffle_label).x +
+                checkbox_square_size +
                 style.ItemInnerSpacing.x +
-                ImGui::GetTextLineHeight() + // defines the size of the box
-                2 * style.FramePadding.x;
+                ImGui::CalcTextSize(shuffle_label).x;
 
             const std::string enable_all_label = ICON_FA_CHECK_SQUARE_O " All";
             const float enable_all_width =
@@ -285,7 +285,7 @@ namespace ManageThemesScreen {
 
             const float buttons_width =
                 refresh_width +
-                style.ItemInnerSpacing.x +
+                style.ItemSpacing.x +
                 shuffle_width +
                 style.ItemSpacing.x +
                 enable_all_width +
@@ -341,7 +341,7 @@ namespace ManageThemesScreen {
             auto cfg = PluginManager::GetConfig();
             if (cfg) {
                 bool is_shuffling = cfg->shuffleThemes;
-                if (ImGui::Checkbox("Shuffle", is_shuffling))
+                if (ImGui::Checkbox(shuffle_label, is_shuffling))
                     PluginManager::ToggleShuffling();
 
                 if (is_shuffling) {
@@ -376,7 +376,7 @@ namespace ManageThemesScreen {
                 const ImVec2 inner_size = {320, 260};
                 const ImVec2 padding = {12, 12};
                 const ImVec2 outer_size = inner_size + 2 * padding;
-                const ImVec2 spacing = {18, 18};
+                const ImVec2 spacing = {15, 15};
 
                 for (auto [counter, index] : visible_indexes | std::views::enumerate) {
                     const auto& theme = installed_themes[index];
@@ -518,9 +518,7 @@ namespace ManageThemesScreen {
 #ifdef DEBUG_BG_COLOR
             StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
 #endif
-            const auto &style = ImGui::GetStyle();
-            // Remove horizontal padding.
-            StyleVar no_hori_padding{ImGuiStyleVar_WindowPadding, {0, style.WindowPadding.y}};
+            StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
             if (Child manage_content{"ManageThemesContent",
                                      {0, 0},
                                      ImGuiChildFlags_NavFlattened |

@@ -100,7 +100,7 @@ namespace NavBar {
 #ifdef DEBUG_BG_COLOR
         StyleColor navbar_bg{ImGuiCol_ChildBg, {0.5f, 0.0f, 0.0f, 1.0f}};
 #endif
-        const float navbar_width = 160;
+        const float navbar_width = 160 - 8;
 
         Child nav_bar{"NavBar", {navbar_width, 0},
                       ImGuiChildFlags_NavFlattened,

@@ -412,7 +412,7 @@ namespace App {
                     StyleVar restore_border{ImGuiStyleVar_WindowBorderSize, orig_border};
                     StyleVar restore_rounding{ImGuiStyleVar_WindowRounding, orig_rounding};
                     NavBar::process_ui();
-                    ImGui::SameLine(0, 9); // NOTE: override ItemSpacing
+                    ImGui::SameLine(0, 6); // NOTE: override ItemSpacing
                     {
 #ifdef MEASURE_RENDER_TIME
                         TimerReporter slow_content{std::cout,

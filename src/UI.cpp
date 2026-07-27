@@ -8,6 +8,7 @@
  */
 
 #include <cmath>
+#include <iostream>
 #include <ranges>
 #include <utility>
 #include <vector>
@@ -17,6 +18,9 @@
 #include <imgui_stdlib.h>
 
 #include "UI.h"
+
+using std::cout;
+using std::endl;
 
 namespace UI {
 
@@ -120,6 +124,18 @@ namespace UI {
             std::fmax(a.x, b.x),
             std::fmax(a.y, b.y)
         };
+    }
+
+    void
+    ShowLastBB()
+    {
+        auto min = ImGui::GetItemRectMin();
+        auto max = ImGui::GetItemRectMax();
+        // auto diff = max - min;
+        // cout << "BB: [" << diff.x << " x " << diff.y << "]" << endl;
+        ImU32 col = ImGui::GetColorU32(ImVec4{1.0f, 0.0f, 0.0f, 0.5f});
+        auto draw_list = ImGui::GetForegroundDrawList();
+        draw_list->AddRect(min, max, col);
     }
 
     void

@@ -68,6 +68,8 @@ namespace UI {
         const ImVec2& b)
         noexcept;
 
+    void
+    ShowLastBB();
 
     void
     Title(const std::string& text);
