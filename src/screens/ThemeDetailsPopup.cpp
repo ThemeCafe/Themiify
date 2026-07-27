@@ -218,7 +218,7 @@ namespace ThemeDetailsPopup {
                 Font name_font{nullptr, 50};
                 ImGui::TextWrapped(fullTheme.name);
             }
-            ImGui::TextWrapped("by %s", fullTheme.creator.username.data());
+            ImGui::TextWrapped("by " + fullTheme.creator.username);
 
             // Put content in a scrollable child window.
             if (Child content{"content",
@@ -335,7 +335,7 @@ namespace ThemeDetailsPopup {
                 break;
 
             case State::error:
-                ImGui::TextWrapped("Error: %s", error.data());
+                ImGui::FormatTextWrapped("Error: {}", error);
                 break;
 
             case State::ready_themezer:

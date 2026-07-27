@@ -21,6 +21,7 @@
 #include <iostream>
 #include <filesystem>
 #include <optional>
+#include <string>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -33,6 +34,7 @@
 using std::cout;
 using std::cerr;
 using std::endl;
+using namespace std::literals;
 
 // Define this to help seeing the padding and spacing values for windows.
 // #define DEBUG_BG_COLOR
@@ -251,7 +253,7 @@ namespace HomeScreen {
 
             {
                 Font font{nullptr, 25};
-                ImGui::Text("v%s", THEMIIFY_VERSION);
+                ImGui::Text("v"s + THEMIIFY_VERSION);
             }
         }
 

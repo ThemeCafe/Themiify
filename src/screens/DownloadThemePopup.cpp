@@ -108,8 +108,8 @@ namespace DownloadThemePopup {
         show_confirmation() {
             UI::Title("Download Confirmation");
 
-            ImGui::TextWrapped("Would you like to download the theme:\n%s ?",
-                               transfer_name.c_str());
+            ImGui::FormatTextWrapped("Would you like to download the theme:\n{} ?",
+                                     transfer_name);
 
             UI::ButtonHBox buttons;
             buttons.valign = 1.0f;
@@ -143,7 +143,7 @@ namespace DownloadThemePopup {
 
             ImGui::TextWrapped(utheme_url);
 
-            ImGui::TextWrapped("Saving to: %s", utheme_filename.filename().c_str());
+            ImGui::FormatTextWrapped("Saving to: {}", utheme_filename.filename().string());
 
             auto info = DownloadManager::get_info(utheme_url);
 

@@ -162,8 +162,8 @@ namespace InstallThemePopup {
         show_state_confirmation() {
             UI::Title("Confirm theme installation");
 
-            ImGui::TextWrapped("Would you like to install:\n%s ?",
-                               metadata->themeName.c_str());
+            ImGui::FormatTextWrapped("Would you like to install:\n{} ?",
+                                     metadata->themeName);
 
             std::string enable_label = (PluginManager::IsShuffling() ? "Enable"s : "Apply"s)
                 + " theme after installation"s;
@@ -197,7 +197,7 @@ namespace InstallThemePopup {
         show_state_installing() {
             UI::Title("Installing");
 
-            ImGui::TextWrapped("Installing %s...", metadata->themeName.c_str());
+            ImGui::FormatTextWrapped("Installing {}...", metadata->themeName);
 
             ImGui::Text("This may take time, do not turn off your Wii U.");
 

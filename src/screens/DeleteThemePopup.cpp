@@ -89,8 +89,8 @@ namespace DeleteThemePopup {
 
         UI::Title("Delete Confirmation");
 
-        ImGui::TextWrapped("Would you like to delete \"%s\"?",
-                           installedTheme->metadata.themeName.c_str());
+        ImGui::FormatTextWrapped("Would you like to delete \"{}\"?",
+                                 installedTheme->metadata.themeName);
 
         UI::ButtonHBox buttons;
         buttons.add(ICON_FA_TIMES " Cancel",
