@@ -14,20 +14,22 @@
 #include <string>
 #include <vector>
 
+#include <imgui.h>
+
 namespace UI {
 
-    using ClickCallbackSignature = void();
-    using ClickFunction = std::move_only_function<ClickCallbackSignature>;
-
-    struct Button {
-        std::string label = {};
-        std::string tooltip = {};
-        bool is_default = false;
-        ClickFunction on_click = {};
-    };
-
-
     struct ButtonHBox {
+
+        using ClickCallbackSignature = void();
+        using ClickFunction = std::move_only_function<ClickCallbackSignature>;
+
+        struct Button {
+            std::string label = {};
+            std::string tooltip = {};
+            bool is_default = false;
+            ClickFunction on_click = {};
+        };
+
         float halign = 0.5f;
         float valign = -1;
         std::vector<Button> buttons = {};
@@ -63,10 +65,55 @@ namespace UI {
 
     }; // struct ButtonHBox
 
+    void
+    initialize();
+
+    void
+    finalize();
+
+    bool
+    Button(const std::string& label,
+           const ImVec2& size = {0, 0});
+
+    bool
+    Checkbox(const std::string& label,
+             bool& variable);
+
+    void
+    CloseCurrentPopup(bool silent = false);
+
+    bool
+    CollapsingHeader(const std::string& label,
+                     ImGuiTreeNodeFlags flags = 0);
+
     ImVec2
     max(const ImVec2& a,
         const ImVec2& b)
         noexcept;
+
+    bool
+    OpenPopup(const std::string& popup_id);
+
+    void
+    PlaySFXClick();
+
+    void
+    PlaySFXPopupClose();
+
+    void
+    PlaySFXPopupOpen();
+
+    void
+    PlaySFXQRScan();
+
+    void
+    PlaySFXTabSwitch();
+
+    bool
+    Selectable(const std::string& label,
+               bool selected,
+               ImGuiSelectableFlags flags = 0,
+               const ImVec2& size = {0, 0});
 
     void
     ShowLastBB();

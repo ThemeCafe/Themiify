@@ -68,7 +68,7 @@ namespace DeleteThemePopup {
             return;
 
         if (state == State::queued) {
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             state = State::visible;
         }
 
@@ -83,6 +83,8 @@ namespace DeleteThemePopup {
                          ImGuiWindowFlags_NoResize};
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }
@@ -96,7 +98,7 @@ namespace DeleteThemePopup {
         buttons.add(ICON_FA_TIMES " Cancel",
                     []
                     {
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup();
                         state = State::hidden;
                         installedTheme.reset();
                     });
@@ -105,7 +107,7 @@ namespace DeleteThemePopup {
                     []
                     {
                         ThemeManager::Uninstall(installedTheme);
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup();
                         state = State::hidden;
                         installedTheme.reset();
                     });

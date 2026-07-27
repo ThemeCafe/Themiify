@@ -228,7 +228,7 @@ namespace SettingsPopup {
 
         void
         action_close() {
-            ImGui::CloseCurrentPopup();
+            UI::CloseCurrentPopup();
             state = State::hidden;
         }
 
@@ -450,7 +450,7 @@ namespace SettingsPopup {
                         "\n"
                         "Doing so will delete all dumped Wii U Menu files");
 
-            ImGui::Checkbox("Delete theme thumbnails as well?", &delete_thumbnails);
+            UI::Checkbox("Delete theme thumbnails as well?", delete_thumbnails);
 
             UI::ButtonHBox buttons;
             buttons.add(ICON_FA_TIMES " Cancel", action_close);
@@ -517,9 +517,9 @@ namespace SettingsPopup {
                 "Note: By installing any theme via Themiify, this will be done automatically."
             );
 
-            ImGui::Checkbox("Dump AllMessage.szs for all languages.\n"
+            UI::Checkbox("Dump AllMessage.szs for all languages.\n"
                             "Consult the Theme Café docs for more info on these files.",
-                            &dump_allmessage);
+                            dump_allmessage);
 
             UI::ButtonHBox buttons;
             buttons.add(ICON_FA_TIMES " Cancel", action_close);
@@ -732,7 +732,7 @@ namespace SettingsPopup {
             return;
 
         if (popup_queued) {
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             popup_queued = false;
         }
 
@@ -748,6 +748,8 @@ namespace SettingsPopup {
                          ImGuiWindowFlags_NoTitleBar};
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }

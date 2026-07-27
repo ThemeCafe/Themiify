@@ -8,16 +8,18 @@
  */
 
 #include "SettingsScreen.h"
-#include "SettingsPopup.h"
+
 #include "../NavBar.h"
 #include "../PluginManager.h"
 #include "../ThemeManager.h"
-#include "../utils.h"
 #include "../tracer.hpp"
+#include "../UI.h"
+#include "../utils.h"
+#include "SettingsPopup.h"
 
 #include <iostream>
 
-#include <SDL2/SDL_mixer.h>
+#include <SDL_mixer.h>
 
 #include <imgui.h>
 #include <imgui_raii.h>
@@ -44,6 +46,7 @@ namespace SettingsScreen {
             bool is_first_boot = true;
             bool check_integrity_at_boot = false;
             int music_volume = 75;
+            int sfx_volume = 75;
         };
 
         /*-----------*/
@@ -117,12 +120,28 @@ namespace SettingsScreen {
 
         void
         show_sound_options() {
-            ImGui::RAII::Indent _;
+            using namespace ImGui::RAII;
 
-            ImGui::Text("Background music volume level:");
-            if (ImGui::Slider("##volume", settings.music_volume, 0, 100, "%d%%")) {
-                int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
-                Mix_VolumeMusic(mix_volume);
+            Indent one;
+
+            ImGui::Text("Sound effects volume");
+            {
+                Indent two;
+                // ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                if (ImGui::Slider("##sfx_volume", settings.sfx_volume, 0, 100, "%d%%")) {
+                    int mix_volume = (settings.sfx_volume * MIX_MAX_VOLUME) / 100;
+                    Mix_MasterVolume(mix_volume);
+                }
+            }
+
+            ImGui::Text("Background music volume:");
+            {
+                Indent two;
+                // ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                if (ImGui::Slider("##bgm_volume", settings.music_volume, 0, 100, "%d%%")) {
+                    int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
+                    Mix_VolumeMusic(mix_volume);
+                }
             }
 
             if (Mix_PlayingMusic())
@@ -135,17 +154,17 @@ namespace SettingsScreen {
         show_special_files_options() {
             ImGui::RAII::Indent _;
 
-            if (ImGui::Button("Check integrity of Wii U Menu files"))
+            if (UI::Button("Check integrity of Wii U Menu files"))
                 SettingsPopup::open(SettingsPopup::OpenState::integrity);
 
             ImGui::SameLine();
 
-            ImGui::Checkbox("Check at every boot", settings.check_integrity_at_boot);
+            UI::Checkbox("Check at every boot", settings.check_integrity_at_boot);
 
-            if (ImGui::Button("Dump Wii U Menu files"))
+            if (UI::Button("Dump Wii U Menu files"))
                 SettingsPopup::open(SettingsPopup::OpenState::dump);
 
-            if (ImGui::Button("Clear Themiify cache"))
+            if (UI::Button("Clear Themiify cache"))
                 SettingsPopup::open(SettingsPopup::OpenState::cache);
         }
 
@@ -157,21 +176,21 @@ namespace SettingsScreen {
 
             if (auto cfg = PluginManager::GetConfig()) {
 
-                ImGui::Checkbox("Enable plugin", cfg->themeManagerEnabled);
+                UI::Checkbox("Enable plugin", cfg->themeManagerEnabled);
                 ImGui::SetItemTooltip("Set \"themeManagerEnabled\"");
 
                 bool shuffle_value = cfg->shuffleThemes;
-                if (ImGui::Checkbox("Shuffle themes", shuffle_value))
+                if (UI::Checkbox("Shuffle themes", shuffle_value))
                     PluginManager::ToggleShuffling();
                 ImGui::SetItemTooltip("Set \"suffleThemes\""); // NOTE: typo
 
-                ImGui::Checkbox("Mash up themes", cfg->mashupThemes);
+                UI::Checkbox("Mash up themes", cfg->mashupThemes);
                 ImGui::SetItemTooltip("Set \"mashupThemes\"");
 
-                ImGui::Checkbox("Show notifications", cfg->showNotification);
+                UI::Checkbox("Show notifications", cfg->showNotification);
                 ImGui::SetItemTooltip("Set \"showNotification\"");
 
-                if (ImGui::CollapsingHeader("Enabled themes:")) {
+                if (UI::CollapsingHeader("Enabled themes:")) {
                     Indent _2;
                     const ImVec2 themes_size = {
                         0,
@@ -186,7 +205,7 @@ namespace SettingsScreen {
                             [](std::size_t, const ThemeManager::ConstThemePtr& theme)
                             {
                                 bool enabled = PluginManager::IsEnabled(theme->path);
-                                if (ImGui::Checkbox("##" + theme->path.filename().string(),
+                                if (UI::Checkbox("##" + theme->path.filename().string(),
                                                     enabled)) {
                                     if (enabled)
                                         PluginManager::Enable(theme->path);
@@ -200,7 +219,7 @@ namespace SettingsScreen {
                     }
                 }
 
-                if (ImGui::Button("Manage installed themes..."))
+                if (UI::Button("Manage installed themes..."))
                     NavBar::set_current_tab(NavBar::Tab::manage_themes);
                 ImGui::SetItemTooltip("Set \"enabledThemes\"");
 
@@ -208,7 +227,7 @@ namespace SettingsScreen {
                 ImGui::TextWrapped("Could not parse StyleMiiU configuration.");
             }
 
-            if (ImGui::Button("Delete Style Mii U configuration")) {
+            if (UI::Button("Delete Style Mii U configuration")) {
                 PluginManager::DeleteConfig();
             }
         }
@@ -272,11 +291,11 @@ namespace SettingsScreen {
 
                 // Put options on their own child window, to scroll.
                 if (Child settings_items{"SettingsOptions"}) {
-                    if (ImGui::CollapsingHeader("Special files"))
+                    if (UI::CollapsingHeader("Special files"))
                         show_special_files_options();
-                    if (ImGui::CollapsingHeader("Sound options"))
+                    if (UI::CollapsingHeader("Sound options"))
                         show_sound_options();
-                    if (ImGui::CollapsingHeader("StyleMiiU options"))
+                    if (UI::CollapsingHeader("StyleMiiU options"))
                         show_stylemiiu_options();
                 }
 

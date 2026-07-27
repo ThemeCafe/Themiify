@@ -103,7 +103,7 @@ namespace InstallThemePopup {
 
         void
         action_close() {
-            ImGui::CloseCurrentPopup();
+            UI::CloseCurrentPopup();
             state = State::hidden;
         }
 
@@ -167,7 +167,7 @@ namespace InstallThemePopup {
 
             std::string enable_label = (PluginManager::IsShuffling() ? "Enable"s : "Apply"s)
                 + " theme after installation"s;
-            ImGui::Checkbox(enable_label, enable_theme);
+            UI::Checkbox(enable_label, enable_theme);
 
             UI::ButtonHBox buttons;
             buttons.add(ICON_FA_TIMES " Cancel", action_close);
@@ -282,7 +282,7 @@ namespace InstallThemePopup {
             return;
 
         if (popup_queued) {
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             popup_queued = false;
         }
 
@@ -299,6 +299,8 @@ namespace InstallThemePopup {
         };
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }

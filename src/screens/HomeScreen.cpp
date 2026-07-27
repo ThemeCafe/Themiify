@@ -16,6 +16,7 @@
 #include "../PluginManager.h"
 #include "../ThemeManager.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "../utils.h"
 
 #include <iostream>
@@ -23,8 +24,8 @@
 #include <optional>
 #include <string>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include <imgui.h>
 #include <imgui_raii.h>
@@ -283,7 +284,7 @@ namespace HomeScreen {
         if (Child scrollable_content{"scrollable_content"}) {
             show_current_theme();
 
-            if (ImGui::Button("Download Themes"))
+            if (UI::Button("Download Themes"))
                 NavBar::set_current_tab(NavBar::Tab::themezer);
 
             ImGui::SameLine();
@@ -294,7 +295,7 @@ namespace HomeScreen {
                 std::string label = "Manage Installed Themes";
                 ImVec2 button_size = ImGui::CalcTextSize(label) + 2 * style.FramePadding;
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - button_size.x);
-                if (ImGui::Button(label, button_size))
+                if (UI::Button(label, button_size))
                     NavBar::set_current_tab(NavBar::Tab::manage_themes);
             }
 

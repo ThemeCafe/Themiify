@@ -14,6 +14,7 @@
 #include "App.h"
 #include "screens/ConfirmExitPopup.h"
 #include "tracer.hpp"
+#include "UI.h"
 #include "utils.h"
 
 #include <SDL_image.h>
@@ -132,46 +133,64 @@ namespace NavBar {
 #endif
         if (Child buttons_box{"ButtonsBox", {navbar_width, 0}, ImGuiChildFlags_NavFlattened}) {
             if (current_tab == Tab::home) {
-                ImGui::ImageButton("home_button_active", home_button_active_tex, button_size);
+                ImGui::ImageButton("home_button_active",
+                                   home_button_active_tex,
+                                   button_size);
             }
             else {
                 // TODO: Implement the App::ImageButton overload in the App namespace to
                 // add the sound effect and rumble when clicked
-                if (ImGui::ImageButton("home_button_normal", home_button_normal_tex, button_size)) {
-                    current_tab = Tab::home;
+                if (ImGui::ImageButton("home_button_normal",
+                                       home_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::home);
                 }
             }
 
             if (current_tab == Tab::manage_themes) {
-                ImGui::ImageButton("installed_button_active", manage_themes_button_active_tex, button_size);
+                ImGui::ImageButton("installed_button_active",
+                                   manage_themes_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("installed_button_normal", manage_themes_button_normal_tex, button_size)) {
-                    current_tab = Tab::manage_themes;
+                if (ImGui::ImageButton("installed_button_normal",
+                                       manage_themes_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::manage_themes);
                 }
             }
 
             if (current_tab == Tab::themezer) {
-                ImGui::ImageButton("themezer_button_active", themezer_button_active_tex, button_size);
+                ImGui::ImageButton("themezer_button_active",
+                                   themezer_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("themezer_button_normal", themezer_button_normal_tex, button_size)) {
-                    current_tab = Tab::themezer;
+                if (ImGui::ImageButton("themezer_button_normal",
+                                       themezer_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::themezer);
                 }
             }
 
             if (current_tab == Tab::settings) {
-                ImGui::ImageButton("settings_button_active", settings_button_active_tex, button_size);
+                ImGui::ImageButton("settings_button_active",
+                                   settings_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("settings_button_normal", settings_button_normal_tex, button_size)) {
-                    current_tab = Tab::settings;
+                if (ImGui::ImageButton("settings_button_normal",
+                                       settings_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::settings);
                 }
             }
 
             ImGui::Separator();
 
-            if (ImGui::ImageButton("exit_button_normal", exit_button_normal_tex, button_size)) {
+            if (ImGui::ImageButton("exit_button_normal",
+                                   exit_button_normal_tex,
+                                   button_size)) {
                 ConfirmExitPopup::open();
             }
         }
@@ -182,6 +201,7 @@ namespace NavBar {
     }
 
     void set_current_tab(Tab tab) {
+        UI::PlaySFXTabSwitch();
         current_tab = tab;
     }
 }

@@ -18,6 +18,7 @@
 #include "ThemeManager.h"
 #include "ThemezerAPI.h"
 #include "timer.hpp"
+#include "UI.h"
 #include "utils.h"
 #include "screens/QRCodePopup.h"
 #include "screens/ConfirmExitPopup.h"
@@ -34,10 +35,10 @@
 
 #include <mocha/mocha.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_syswm.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -256,6 +257,7 @@ namespace App {
 
         DownloadManager::initialize(user_agent);
         ImageLoader::initialize(renderer);
+        UI::initialize();
         NavBar::initialize(renderer);
         ContentPanel::initialize(renderer);
 
@@ -293,6 +295,7 @@ namespace App {
 
         NavBar::finalize();
         ContentPanel::finalize();
+        UI::finalize();
         ThemeManager::finalize();
         PluginManager::finalize();
         ImageLoader::finalize();

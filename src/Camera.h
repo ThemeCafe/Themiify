@@ -1,15 +1,15 @@
 /*
  * Themiify - A theme manager for the Nintendo Wii U
- * Copyright (C) 2026 Fangal-Airbag  
+ * Copyright (C) 2026 Fangal-Airbag
  * Copyright (C) 2026 AlphaCraft9658
- * Copyright (C) 2026  Daniel K. O. <dkosmari>
+ * Copyright (C) 2026 Daniel K. O. <dkosmari>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <camera/camera.h>
 
 namespace Camera {
@@ -37,5 +37,5 @@ namespace Camera {
     const uint8_t* get_grayscale_buffer();
     int get_width();
     int get_height();
-    int get_pitch();    
+    int get_pitch();
 }

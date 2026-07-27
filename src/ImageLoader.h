@@ -11,7 +11,7 @@
 
 #include <string>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 namespace ImageLoader {
     void initialize(SDL_Renderer *renderer);

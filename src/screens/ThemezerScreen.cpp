@@ -20,7 +20,7 @@
 #include <imgui.h>
 #include <imgui_raii.h>
 
-#include <SDL2/SDL_image.h>
+#include <SDL_image.h>
 
 #include "ThemezerScreen.h"
 
@@ -30,6 +30,7 @@
 #include "../ThemeManager.h"
 #include "../ThemezerAPI.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "../utils.h"
 #include "DownloadThemePopup.h"
 #include "InstallThemePopup.h"
@@ -183,7 +184,7 @@ namespace ThemezerScreen {
         ImVec2 start_pos = padding;
 
         ImGui::SetCursorPos({0, 0});
-        if (ImGui::Button("##button", outer_size)) {
+        if (UI::Button("##button", outer_size)) {
             ThemeDetailsPopup::open_themezer(theme);
         }
 
@@ -349,7 +350,7 @@ namespace ThemezerScreen {
 
         ImGui::SameLine();
 
-        if (ImGui::Button(qr_label, qr_size))
+        if (UI::Button(qr_label, qr_size))
             QRCodePopup::open();
 
         ImGui::SameLine();
@@ -360,20 +361,22 @@ namespace ThemezerScreen {
             ImGui::SetNextItemWidth(sort_width);
             if (Combo sort_combo{"##sort_combo"s, sort_to_label(sort)}) {
                 for (auto new_sort : ThemezerAPI::ItemSortList) {
-                    if (ImGui::Selectable(sort_to_label(new_sort),
-                                          new_sort == sort)) {
+                    if (UI::Selectable(sort_to_label(new_sort),
+                                       new_sort == sort)) {
                         sort = new_sort;
                         fetch_page(1);
                     }
                 }
             }
+            if (ImGui::IsItemClicked())
+                UI::PlaySFXClick();
         }
 
         ImGui::SameLine();
 
         {
             Disabled disable_if{themezer_busy};
-            if (ImGui::Button(reverse_label, reverse_size)) {
+            if (UI::Button(reverse_label, reverse_size)) {
                 order = order == SortOrder::ASC ? SortOrder::DESC : SortOrder::ASC;
                 fetch_page(1);
             }
@@ -392,7 +395,7 @@ namespace ThemezerScreen {
 
                 Disabled disable_if{first_page};
 
-                if (ImGui::Button(nav_prev_label, nav_prev_size))
+                if (UI::Button(nav_prev_label, nav_prev_size))
                     fetch_page(page - 1);
             }
 
@@ -409,7 +412,7 @@ namespace ThemezerScreen {
 
                 Disabled disable_if{last_page};
 
-                if (ImGui::Button(nav_next_label, nav_next_size))
+                if (UI::Button(nav_next_label, nav_next_size))
                     fetch_page(page + 1);
             }
         }

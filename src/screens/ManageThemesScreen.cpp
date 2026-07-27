@@ -12,8 +12,8 @@
 #include <optional>
 #include <ranges>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include <imgui.h>
 #include <imgui_raii.h>
@@ -44,6 +44,15 @@ namespace ManageThemesScreen {
 
     namespace {
 
+        /*-------*/
+        /* Types */
+        /*-------*/
+
+        enum class Tab {
+            installed,
+            uthemes,
+        };
+
         /*-----------*/
         /* Variables */
         /*-----------*/
@@ -54,6 +63,9 @@ namespace ManageThemesScreen {
         SDL_Renderer *manage_renderer;
 
         std::string search;
+
+        // NOTE: used to track when the tab swich happens.
+        Tab current_tab = Tab::installed;
 
         /*-----------------------*/
         /* Function declarations */
@@ -77,6 +89,9 @@ namespace ManageThemesScreen {
         int
         similarity_score(const std::string& haystack_,
                          const std::string& needle_);
+
+        void
+        switch_tab(Tab tab);
 
         void
         text_limited(float width,
@@ -109,7 +124,7 @@ namespace ManageThemesScreen {
 
             bool clicked = false;
             ImGui::SetCursorPos({0, 0});
-            if (ImGui::Button("##button", outer_size)) {
+            if (UI::Button("##button", outer_size)) {
                 // NOTE: delay opening the popup, gotta check if the user clicked on the star.
                 clicked = true;
             }
@@ -221,7 +236,7 @@ namespace ManageThemesScreen {
 
             ImGui::SameLine();
 
-            if (ImGui::Button(qr_label, qr_size))
+            if (UI::Button(qr_label, qr_size))
                 QRCodePopup::open();
 
             ImGui::SameLine();
@@ -230,7 +245,7 @@ namespace ManageThemesScreen {
 
             {
                 Disabled if_refreshing{refreshing};
-                if (ImGui::Button(refresh_label))
+                if (UI::Button(refresh_label))
                     ThemeManager::RefreshUThemes();
             }
 
@@ -332,7 +347,7 @@ namespace ManageThemesScreen {
             const bool refreshing = ThemeManager::IsRefreshingThemes();
             {
                 Disabled if_refreshing{refreshing};
-                if (ImGui::Button(refresh_label))
+                if (UI::Button(refresh_label))
                     ThemeManager::RefreshInstalledThemes();
             }
 
@@ -341,12 +356,12 @@ namespace ManageThemesScreen {
             auto cfg = PluginManager::GetConfig();
             if (cfg) {
                 bool is_shuffling = cfg->shuffleThemes;
-                if (ImGui::Checkbox(shuffle_label, is_shuffling))
+                if (UI::Checkbox(shuffle_label, is_shuffling))
                     PluginManager::ToggleShuffling();
 
                 if (is_shuffling) {
                     ImGui::SameLine();
-                    if (ImGui::Button(enable_all_label)) {
+                    if (UI::Button(enable_all_label)) {
                         ThemeManager::ForEachInstalledTheme(
                             [](std::size_t,
                                const ThemeManager::ConstThemePtr& theme)
@@ -356,7 +371,7 @@ namespace ManageThemesScreen {
                         );
                     }
                     ImGui::SameLine();
-                    if (ImGui::Button(disable_all_label)) {
+                    if (UI::Button(disable_all_label)) {
                         ThemeManager::ForEachInstalledTheme(
                             [](std::size_t,
                                const ThemeManager::ConstThemePtr& theme)
@@ -426,7 +441,7 @@ namespace ManageThemesScreen {
 
             ImGui::SameLine();
 
-            if (ImGui::Button(install_label, button_size))
+            if (UI::Button(install_label, button_size))
                 InstallThemePopup::open(utheme, metadata, false, true);
 
 
@@ -440,7 +455,7 @@ namespace ManageThemesScreen {
 
             ImGui::SameLine();
 
-            if (ImGui::Button(delete_label, button_size)) {
+            if (UI::Button(delete_label, button_size)) {
                 DeletePath(utheme);
                 ThemeManager::RefreshUThemes();
             }
@@ -477,6 +492,15 @@ namespace ManageThemesScreen {
             }
 
             return score;
+        }
+
+        void
+        switch_tab(Tab tab)
+        {
+            if (tab != current_tab) {
+                UI::PlaySFXTabSwitch();
+                current_tab = tab;
+            }
         }
 
         void
@@ -527,10 +551,12 @@ namespace ManageThemesScreen {
                 if (TabBar tab_bar{"tab_bar"}) {
 
                     if (TabItem manage_installed{"Manage Installed Themes"}) {
+                        switch_tab(Tab::installed);
                         show_tab_manage_installed();
                     }
 
                     if (TabItem install_local{"Install Local Themes"}) {
+                        switch_tab(Tab::uthemes);
                         show_tab_install_local();
                     }
 
