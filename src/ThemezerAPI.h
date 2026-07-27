@@ -100,17 +100,23 @@ namespace ThemezerAPI {
 
 
     enum class ItemSort {
+        COLOR_SIMILARITY,
         CREATED,
         DOWNLOADS,
+        RISING,
         SAVES,
+        TRENDING,
         UPDATED,
     };
 
     inline constexpr
     std::array ItemSortList = {
+        ItemSort::COLOR_SIMILARITY,
         ItemSort::CREATED,
         ItemSort::DOWNLOADS,
+        ItemSort::RISING,
         ItemSort::SAVES,
+        ItemSort::TRENDING,
         ItemSort::UPDATED,
     };
 

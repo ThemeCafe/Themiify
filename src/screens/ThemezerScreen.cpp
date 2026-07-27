@@ -55,7 +55,7 @@ namespace ThemezerScreen {
     bool first_fetch = true;
     uint32_t page = 0;
 
-    ItemSort sort = ItemSort::CREATED;
+    ItemSort sort = ItemSort::TRENDING;
     SortOrder order = SortOrder::DESC;
 
     std::string query;
@@ -70,10 +70,14 @@ namespace ThemezerScreen {
 
     std::string sort_to_label(ItemSort arg) {
         switch (arg) {
-            case ItemSort::CREATED:   return "Created";
-            case ItemSort::DOWNLOADS: return "Downloads";
-            case ItemSort::SAVES:     return "Saves";
-            case ItemSort::UPDATED:   return "Updated";
+            using enum ItemSort;
+            case COLOR_SIMILARITY: return "Color similarity";
+            case CREATED:          return "Created";
+            case DOWNLOADS:        return "Downloads";
+            case RISING:           return "Rising";
+            case SAVES:            return "Saves";
+            case TRENDING:         return "Trending";
+            case UPDATED:          return "Updated";
             default: throw std::logic_error{"invalid"};
         }
     }

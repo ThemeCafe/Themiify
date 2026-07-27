@@ -294,8 +294,11 @@ namespace ThemeDetailsPopup {
                 }
             }
 
-            if (UI::Button(ICON_FA_DOWNLOAD " Download", {-1, 0}))
+            if (UI::Button(ICON_FA_DOWNLOAD " Download", {-1, 0})) {
+                state = State::hidden;
+                UI::CloseCurrentPopup(true);
                 DownloadThemePopup::open(smallTheme);
+            }
             ImGui::SetItemDefaultFocus();
 
             if (UI::Button(ICON_FA_EYE " Preview", {-1, 0}))

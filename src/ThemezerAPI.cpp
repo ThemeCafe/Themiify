@@ -30,10 +30,15 @@ namespace glz {
     template<>
     struct meta<ThemezerAPI::ItemSort> {
         using enum ThemezerAPI::ItemSort;
-        static constexpr auto value = enumerate(CREATED,
-                                                DOWNLOADS,
-                                                SAVES,
-                                                UPDATED);
+        static constexpr auto value = enumerate(
+            COLOR_SIMILARITY,
+            CREATED,
+            DOWNLOADS,
+            RISING,
+            SAVES,
+            TRENDING,
+            UPDATED
+        );
     };
 
     template<>
