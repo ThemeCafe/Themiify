@@ -75,6 +75,15 @@ namespace SettingsScreen {
         void
         save_settings();
 
+        void
+        show_sound_options();
+
+        void
+        show_special_files_options();
+
+        void
+        show_stylemiiu_options();
+
         /*----------------------*/
         /* Function definitions */
         /*----------------------*/
@@ -106,94 +115,39 @@ namespace SettingsScreen {
             }
         }
 
-    } // namespace
+        void
+        show_sound_options() {
+            ImGui::RAII::Indent _;
 
-    /*------------------*/
-    /* Public functions */
-    /*------------------*/
-
-    void
-    initialize(SDL_Renderer * /*renderer*/) {
-        TRACE_FUNC;
-
-        create_directories(THEMIIFY_ROOT);
-
-        load_settings();
-
-        bootIntegrityCheckPending = settings.check_integrity_at_boot;
-        int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
-        Mix_VolumeMusic(mix_volume);
-    }
-
-    void
-    finalize() {
-        TRACE_FUNC;
-
-        save_settings();
-    }
-
-    void
-    process_ui() {
-        using namespace ImGui::RAII;
-
-#ifdef DEBUG_BG_COLOR
-        StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
-#endif
-        Child settings_content{"SettingsContent", {0, 0},
-                               ImGuiChildFlags_AlwaysUseWindowPadding};
-        if (!settings_content)
-            return;
-
-        {
-            Font font_guard{nullptr, 45};
-            ImGui::Text("Settings");
-        }
-
-        ImGui::SameLine();
-
-        {
-            Font font_guard{nullptr, 25};
-            // Show text right-aligned.
-            std::string text = "Themiify v" THEMIIFY_VERSION;
-            auto text_size = ImGui::CalcTextSize(text);
-            auto available = ImGui::GetContentRegionAvail();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - text_size.x);
-            ImGui::Text(text);
-        }
-
-        ImGui::SeparatorText("Special files");
-        {
-            Indent _;
-            if (ImGui::Button("Check integrity of Wii U Menu files")) {
-                SettingsPopup::open(SettingsPopup::OpenState::integrity);
-            }
-
-            ImGui::SameLine();
-
-            ImGui::Checkbox("Check at every boot", settings.check_integrity_at_boot);
-
-            if (ImGui::Button("Dump Wii U Menu files")) {
-                SettingsPopup::open(SettingsPopup::OpenState::dump);
-            }
-
-            if (ImGui::Button("Clear Themiify cache")) {
-                SettingsPopup::open(SettingsPopup::OpenState::cache);
-            }
-        }
-
-        ImGui::SeparatorText("Sound options");
-        {
-            Indent _;
             ImGui::Text("Background music volume level:");
-            if (ImGui::SliderInt("##volume", &settings.music_volume, 0, 100, "%d%%")) {
-
+            if (ImGui::Slider("##volume", settings.music_volume, 0, 100, "%d%%")) {
                 int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
                 Mix_VolumeMusic(mix_volume);
             }
         }
 
-        ImGui::SeparatorText("StyleMiiU options");
-        {
+        void
+        show_special_files_options() {
+            ImGui::RAII::Indent _;
+
+            if (ImGui::Button("Check integrity of Wii U Menu files"))
+                SettingsPopup::open(SettingsPopup::OpenState::integrity);
+
+            ImGui::SameLine();
+
+            ImGui::Checkbox("Check at every boot", settings.check_integrity_at_boot);
+
+            if (ImGui::Button("Dump Wii U Menu files"))
+                SettingsPopup::open(SettingsPopup::OpenState::dump);
+
+            if (ImGui::Button("Clear Themiify cache"))
+                SettingsPopup::open(SettingsPopup::OpenState::cache);
+        }
+
+        void
+        show_stylemiiu_options() {
+            using namespace ImGui::RAII;
+
             Indent _;
 
             if (auto cfg = PluginManager::GetConfig()) {
@@ -252,6 +206,77 @@ namespace SettingsScreen {
             if (ImGui::Button("Delete Style Mii U configuration")) {
                 PluginManager::DeleteConfig();
             }
+        }
+
+    } // namespace
+
+    /*------------------*/
+    /* Public functions */
+    /*------------------*/
+
+    void
+    initialize(SDL_Renderer * /*renderer*/) {
+        TRACE_FUNC;
+
+        create_directories(THEMIIFY_ROOT);
+
+        load_settings();
+
+        bootIntegrityCheckPending = settings.check_integrity_at_boot;
+        int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
+        Mix_VolumeMusic(mix_volume);
+    }
+
+    void
+    finalize() {
+        TRACE_FUNC;
+
+        save_settings();
+    }
+
+    void
+    process_ui() {
+        using namespace ImGui::RAII;
+
+        {
+            // NOTE: use a nested scope to not propagate changes to the popup.
+#ifdef DEBUG_BG_COLOR
+            StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
+#endif
+            StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
+            if (Child settings_content{"SettingsContent", {0, 0},
+                                       ImGuiChildFlags_AlwaysUseWindowPadding}) {
+                {
+                    Font font_guard{nullptr, 55};
+                    ImGui::Text("Settings");
+                }
+
+                ImGui::SameLine();
+
+                {
+                    Font font_guard{nullptr, 25};
+                    // Show text right-aligned.
+                    const std::string text = "Themiify v" THEMIIFY_VERSION;
+                    auto text_size = ImGui::CalcTextSize(text);
+                    auto available = ImGui::GetContentRegionAvail();
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - text_size.x);
+                    ImGui::Text(text);
+                }
+
+                ImGui::Separator();
+
+                // Put options on their own child window, to scroll.
+                if (Child settings_items{"SettingsOptions"}) {
+                    if (ImGui::CollapsingHeader("Special files"))
+                        show_special_files_options();
+                    if (ImGui::CollapsingHeader("Sound options"))
+                        show_sound_options();
+                    if (ImGui::CollapsingHeader("StyleMiiU options"))
+                        show_stylemiiu_options();
+                }
+
+            }
+
         }
 
         SettingsPopup::process_ui();

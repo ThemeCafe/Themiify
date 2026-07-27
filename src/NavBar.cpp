@@ -29,7 +29,7 @@ using std::cout;
 using std::endl;
 
 namespace NavBar {
-    SDL_Texture *logo_tex;
+    SDL_Texture *icon_tex;
 
     SDL_Texture *home_button_normal_tex;
     SDL_Texture *home_button_active_tex;
@@ -51,7 +51,7 @@ namespace NavBar {
     void initialize(SDL_Renderer *renderer) {
         TRACE_FUNC;
 
-        logo_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/logo.png");
+        icon_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/themiify-icon.png");
 
         home_button_normal_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/home-button-normal.png");
         home_button_active_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/home-button-active.png");
@@ -72,7 +72,7 @@ namespace NavBar {
     void finalize() {
         TRACE_FUNC;
 
-        SDL_DestroyTexture(logo_tex);
+        SDL_DestroyTexture(icon_tex);
 
         SDL_DestroyTexture(home_button_normal_tex);
         SDL_DestroyTexture(home_button_active_tex);
@@ -113,7 +113,7 @@ namespace NavBar {
         StyleVar no_frame_rounding{ImGuiStyleVar_FrameRounding, 0};
         StyleVar no_frame_padding{ImGuiStyleVar_FramePadding, {0, 0}};
 
-        ImGui::Image(logo_tex, {152.4f, 138.0f});
+        ImGui::Image(icon_tex, {152.4f, 138.0f});
 
         const auto &style = ImGui::GetStyle();
         const auto available = ImGui::GetContentRegionAvail();

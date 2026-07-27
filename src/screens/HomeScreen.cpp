@@ -241,6 +241,7 @@ namespace HomeScreen {
 #ifdef DEBUG_BG_COLOR
         StyleColor blue_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
 #endif
+        StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
         Child home_content{"HomeContent", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding};
         if (!home_content)
             return;
@@ -253,7 +254,7 @@ namespace HomeScreen {
 
             {
                 Font font{nullptr, 25};
-                ImGui::Text("v"s + THEMIIFY_VERSION);
+                ImGui::Text("v" THEMIIFY_VERSION);
             }
         }
 
