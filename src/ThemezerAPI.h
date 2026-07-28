@@ -25,6 +25,13 @@ namespace ThemezerAPI {
     }; // struct PageInfo
 
 
+    struct WiiuBase {
+        std::string hexId;
+    }; // struct WiiuBase
+
+    using WiiuBaseVec = std::vector<WiiuBase>;
+
+
     struct WiiuInstallThemeLookup {
         std::string createdAt;
         std::string downloadUrl;
@@ -150,9 +157,9 @@ namespace ThemezerAPI {
 
     namespace wiiu {
 
-        using ThemesSignature = void (const WiiuThemeSmallVec& themes,
+        using ThemesResponseSignature = void (const WiiuThemeSmallVec& themes,
                                       const PageInfo& page_info);
-        using ThemesFunction = std::move_only_function<ThemesSignature>;
+        using ThemesResponseFunction = std::move_only_function<ThemesResponseSignature>;
 
         struct PaginationInput {
             unsigned    limit = 20;
@@ -168,24 +175,40 @@ namespace ThemezerAPI {
 
         void
         themes(const ThemesSpec& spec,
-               ThemesFunction callback);
+               ThemesResponseFunction callback);
 
 
-
-        using ThemeSignature = void(const WiiuThemeFull& theme);
-        using ThemeFunction = std::move_only_function<ThemeSignature>;
+        using ThemeResponseSignature = void(const WiiuThemeFull& theme);
+        using ThemeResponseFunction = std::move_only_function<ThemeResponseSignature>;
 
         void
         theme(const std::string& hexId,
-              ThemeFunction callback);
+              ThemeResponseFunction callback);
 
 
-        using LookupByQuickIdSignature = void (const WiiuInstallThemeLookup& theme);
-        using LookupByQuickIdFunction = std::move_only_function<LookupByQuickIdSignature>;
+        using LookupByQuickIdResponseSignature = void (const WiiuInstallThemeLookup& theme);
+        using LookupByQuickIdResponseFunction =
+            std::move_only_function<LookupByQuickIdResponseSignature>;
 
         void
         lookupByQuickId(const std::string& quickId,
-                        LookupByQuickIdFunction callback);
+                        LookupByQuickIdResponseFunction callback);
+
+
+        struct WiiuCheckUpdatesItemInput {
+            std::string id;
+            std::string version;
+        };
+
+        using CheckUpdatesSpec = std::vector<WiiuCheckUpdatesItemInput>;
+
+        using CheckUpdatesResponseSignature = void(const WiiuBaseVec& themes);
+        using CheckUpdatesResponseFunction =
+            std::move_only_function<CheckUpdatesResponseSignature>;
+
+        void
+        checkUpdates(const CheckUpdatesSpec& spec,
+                     CheckUpdatesResponseFunction callback);
 
     } // namespace wiiu
 
