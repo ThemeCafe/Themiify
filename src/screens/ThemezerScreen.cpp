@@ -159,14 +159,6 @@ namespace ThemezerScreen {
         }
     }
 
-    static void text_limited(float width, const std::string& text) {
-        // WORKAROUND: prevent tooltip.
-        auto& io = ImGui::GetIO();
-        auto old_mouse_pos = io.MousePos;
-        ImGui::TextAligned(0.0f, width, text);
-        io.MousePos = old_mouse_pos;
-    }
-
     void show(const WiiuThemeSmall& theme,
               const ImVec2& inner_size,
               const ImVec2& padding) {
@@ -238,7 +230,7 @@ namespace ThemezerScreen {
             if (!status_label.empty())
                 name_width -= style.ItemSpacing.x + ImGui::CalcTextSize(status_label).x;
 
-            text_limited(name_width, theme.name);
+            ImGui::TextAligned(0, name_width, theme.name);
 
             if (!status_label.empty()) {
                 ImGui::SameLine();
@@ -259,7 +251,7 @@ namespace ThemezerScreen {
             float downloads_width = ImGui::CalcTextSize(downloads_label).x;
 
             float author_width = inner_size.x - downloads_width - style.ItemSpacing.x;
-            text_limited(author_width, "by " + theme.creator.username);
+            ImGui::TextAligned(0, author_width, "by " + theme.creator.username);
 
             ImGui::SameLine();
 

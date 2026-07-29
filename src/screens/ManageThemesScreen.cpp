@@ -115,10 +115,6 @@ namespace ManageThemesScreen {
         void
         switch_tab(Tab tab);
 
-        void
-        text_limited(float width,
-                     const std::string& text);
-
         /*----------------------*/
         /* Function definitions */
         /*----------------------*/
@@ -255,7 +251,7 @@ namespace ManageThemesScreen {
                 // Make sure to limit the name width, so it doesn't get covered by the "status"
                 // icon.
                 float name_width = inner_size.x - status_size.x - style.ItemSpacing.x;
-                text_limited(name_width, theme->metadata.themeName);
+                ImGui::TextAligned(0, name_width, theme->metadata.themeName);
             }
 
             if (theme->metadata.themeAuthor) {
@@ -263,7 +259,7 @@ namespace ManageThemesScreen {
                 // Make sure to limit the author width, so it doesn't get covered by the
                 // "status" icon.
                 float author_width = inner_size.x - status_size.x - style.ItemSpacing.x;
-                text_limited(author_width, "by " + *theme->metadata.themeAuthor);
+                ImGui::TextAligned(0, author_width, "by " + *theme->metadata.themeAuthor);
             }
 
             // Show "status" icon on the bottom right.
@@ -646,16 +642,6 @@ namespace ManageThemesScreen {
                 UI::PlaySFXTabSwitch();
                 current_tab = tab;
             }
-        }
-
-        void
-        text_limited(float width,
-                     const std::string& text) {
-            // WORKAROUND: prevent tooltip.
-            auto& io = ImGui::GetIO();
-            auto old_mouse_pos = io.MousePos;
-            ImGui::TextAligned(0.0f, width, text);
-            io.MousePos = old_mouse_pos;
         }
 
     } // namespace
