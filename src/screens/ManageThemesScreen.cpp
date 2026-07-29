@@ -22,6 +22,7 @@
 
 #include "ManageThemesScreen.h"
 
+#include "../Config.h"
 #include "../IconsFontAwesome4.h"
 #include "../ImageLoader.h"
 #include "../PluginManager.h"
@@ -669,7 +670,8 @@ namespace ManageThemesScreen {
         manage_renderer = renderer;
         installed_themes.clear();
         update_check_performed = false;
-        request_update_check();
+        if (Config::cfg.check_themezer_updates_at_boot)
+            request_update_check();
     }
 
     void

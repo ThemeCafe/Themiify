@@ -10,6 +10,7 @@ add_executable(themiify
     src/App.cpp
     src/byte_stream.cpp
     src/Camera.cpp
+    src/Config.cpp
     src/ContentPanel.cpp
     src/DownloadManager.cpp
     src/graphql.cpp

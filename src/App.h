@@ -9,11 +9,7 @@
 
 #pragma once
 
-#include <string>
-#include "utils.h"
-
 namespace App {
-    const std::string user_agent = "Themiify/" + std::string(THEMIIFY_VERSION) + " (Wii U)";
 
     void initialize();
 
@@ -22,4 +18,7 @@ namespace App {
     bool run();
 
     void quit();
-}
+
+    void update_mixer_volumes();
+
+} // namespace App

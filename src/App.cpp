@@ -10,6 +10,7 @@
 #include "App.h"
 
 #include "Camera.h"
+#include "Config.h"
 #include "ContentPanel.h"
 #include "DownloadManager.h"
 #include "ImageLoader.h"
@@ -23,10 +24,8 @@
 #include "screens/QRCodePopup.h"
 #include "screens/ConfirmExitPopup.h"
 
-#include <chrono>
-#include <fstream>
 #include <iostream>
-#include <span>
+#include <string>
 #include <vector>
 
 #include <coreinit/memory.h>
@@ -67,6 +66,9 @@ using std::endl;
 using namespace std::literals;
 
 namespace App {
+
+    const std::string user_agent = "Themiify/" THEMIIFY_VERSION " (Wii U)";
+
     SDL_Window *window;
     SDL_Renderer *renderer;
 
@@ -219,6 +221,9 @@ namespace App {
     void initialize() {
         std::filesystem::create_directories(THEMIIFY_ROOT);
 
+        // Initialize Config module before everything else.
+        Config::initialize();
+
         MochaUtilsStatus res;
         if ((res = Mocha_InitLibrary()) != MOCHA_RESULT_SUCCESS) {
             OSFatal("FATAL ERROR:\nCould not initialize Mocha.\n\nPlease make sure you are running on the latest version of Aroma");
@@ -256,7 +261,7 @@ namespace App {
         ThemeManager::initialize();
 
         DownloadManager::initialize(user_agent);
-        ImageLoader::initialize(renderer);
+        ImageLoader::initialize(renderer, user_agent);
         UI::initialize();
         NavBar::initialize(renderer);
         ContentPanel::initialize(renderer);
@@ -264,7 +269,8 @@ namespace App {
         // Register proc_ui callback for camera
         ProcUIRegisterCallback(PROCUI_CALLBACK_ACQUIRE, &procCallbackAcquire, nullptr, 1);
 
-        // Start playing bg music, AFTER settings are initialized (through the ContentPanel).
+        // Start playing bg music, AFTER Config is initialized.
+        update_mixer_volumes();
         bgMusicData = load_file(THEMIIFY_ROOT / "bgm.mp3");
         if (bgMusicData.empty())
             bgMusicData = load_file(THEMIIFY_ROOT / "bgm.ogg");
@@ -319,6 +325,8 @@ namespace App {
 
         Mocha_UnmountFS("storage_mlc");
         Mocha_DeInitLibrary();
+
+        Config::finalize();
     }
 
     bool run() {
@@ -454,5 +462,15 @@ namespace App {
 
     void quit() {
         isRunning = false;
+    }
+
+    void update_mixer_volumes() {
+        using Config::cfg;
+
+        int mix_music_volume = cfg.music_volume * MIX_MAX_VOLUME / 100;
+        Mix_VolumeMusic(mix_music_volume);
+
+        int mix_sfx_volume = cfg.sfx_volume * MIX_MAX_VOLUME / 100;
+        Mix_MasterVolume(mix_sfx_volume);
     }
 }

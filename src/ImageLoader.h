@@ -14,7 +14,7 @@
 #include <SDL.h>
 
 namespace ImageLoader {
-    void initialize(SDL_Renderer *renderer);
+    void initialize(SDL_Renderer *renderer, const std::string& user_agent_);
 
     void finalize();
 
