@@ -192,11 +192,14 @@ namespace ThemezerScreen {
             ThemeDetailsPopup::open_themezer(theme);
         }
 
-        // NOTE: when hovered or activated, change the text color to the window bg color.
+        // NOTE: when hovered or activated, make text dark.
+        bool invert_colors = ImGui::IsItemHovered() || ImGui::IsItemActive();
+        const auto& colors = style.Colors;
+        // const auto light_color = colors[ImGuiCol_ButtonActive];
+        const auto dark_color = colors[ImGuiCol_WindowBg];
         std::optional<StyleColor> dark_text;
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive()) {
-            const auto& colors = style.Colors;
-            dark_text.emplace(ImGuiCol_Text, colors[ImGuiCol_WindowBg]);
+        if (invert_colors) {
+            dark_text.emplace(ImGuiCol_Text, dark_color);
         }
 
         ImGui::SetCursorPos(start_pos);
@@ -221,13 +224,15 @@ namespace ThemezerScreen {
                 if (itheme->metadata.themeVersion != theme.updatedAt
                     ||
                     !itheme->legacyMetadataPath.empty()) {
-                    status_label = ICON_FA_REFRESH;
-                    status_color = { 1.0f, 0.7f, 0.0f, 1.0f };
+                    status_label = UI::update_icon;
+                    status_color = UI::update_color;
                 } else {
-                    status_label = ICON_FA_CHECK;
-                    status_color = { 0.0f, 1.0f, 0.3f, 1.0f };
+                    status_label = UI::installed_icon;
+                    status_color = UI::installed_color;
                 }
             }
+            if (invert_colors)
+                status_color = dark_color;
 
             float name_width = inner_size.x;
             if (!status_label.empty())
@@ -273,14 +278,14 @@ namespace ThemezerScreen {
         SDL_WiiUSetSWKBDOKLabel("Search");
         SDL_WiiUSetSWKBDHighlightInitialText(SDL_TRUE);
 
-        /*-------------------------------------------------------------------------------.
-        | Layout:                                                                        |
-        |                                                                                |
-        | [SEARCH] [QUICKID] [QR] [SORT] [REVERSE] [NAV-PREV] [NAV-PAGE] [NAV-NEXT]      |
-        |                                                                                |
-        | Only SEARCH is stretched, so we need to calculate the width of everything that |
-        | comes after.                                                                   |
-        `-------------------------------------------------------------------------------*/
+        /*--------------------------------------------------------------------------------.
+        | Layout:                                                                         |
+        |                                                                                 |
+        | [SEARCH] [QUICKID] [QR] [SORT] [REVERSE] [NAV-PREV] [NAV-PAGE] [NAV-NEXT]       |
+        |                                                                                 |
+        | SEARCH is stretched, so we need to calculate the width of everything that comes |
+        | after.                                                                          |
+        `--------------------------------------------------------------------------------*/
 
         const std::string quick_id_label = "QuickID";
         const auto quick_id_size = ImGui::CalcTextSize(quick_id_label) + 2 * style.FramePadding;

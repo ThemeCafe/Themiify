@@ -20,6 +20,7 @@
 
 #include "UI.h"
 
+#include "IconsFontAwesome4.h"
 #include "tracer.hpp"
 
 using std::cout;
@@ -46,6 +47,17 @@ namespace UI {
         Mix_Chunk* sfx_tab_switch;
 
     } // namespace
+
+    /*------------------*/
+    /* Public constants */
+    /*------------------*/
+
+    const ImVec4 enabled_color   = { 1.0f, 1.0f, 0.0f, 1.0f };
+    const ImVec4 installed_color = { 0.0f, 1.0f, 0.3f, 1.0f };
+    const ImVec4 update_color    = { 0.4f, 0.8f, 1.0f, 1.0f };
+
+    const std::string installed_icon = ICON_FA_CHECK;
+    const std::string update_icon = ICON_FA_CLOUD_DOWNLOAD;
 
     /*------------------*/
     /* Public functions */
@@ -275,7 +287,7 @@ namespace UI {
         // auto diff = max - min;
         // cout << "BB: [" << diff.x << " x " << diff.y << "]" << endl;
         ImU32 col = ImGui::GetColorU32(ImVec4{1.0f, 0.0f, 0.0f, 0.5f});
-        auto draw_list = ImGui::GetForegroundDrawList();
+        auto draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRect(min, max, col);
     }
 

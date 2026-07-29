@@ -57,12 +57,10 @@ namespace ThemeManager {
     using ErrorCallbackSignature = void (const std::string &msg);
     using ErrorFunction = std::function<ErrorCallbackSignature>;
 
-    using ThemeCallbackSignature = void (std::size_t index,
-                                         const ConstThemePtr& theme);
+    using ThemeCallbackSignature = void (const ConstThemePtr& theme);
     using ThemeFunction = std::function<ThemeCallbackSignature>;
 
-    using MetadataCallbackSignature = void(std::size_t index,
-                                           const std::filesystem::path& utheme,
+    using MetadataCallbackSignature = void(const std::filesystem::path& utheme,
                                            const ConstMetadataPtr& meta);
     using MetadataFunction = std::function<MetadataCallbackSignature>;
 

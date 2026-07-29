@@ -986,8 +986,8 @@ namespace ThemeManager {
     void
     ForEachInstalledTheme(const ThemeFunction& func) {
         auto themes = safe_themes_map.lock();
-        for (auto [index, path_theme] : *themes | std::views::enumerate)
-            func(index, path_theme.second);
+        for (const auto& [path, theme] : *themes)
+            func(theme);
     }
 
     ConstThemePtr
@@ -1046,8 +1046,8 @@ namespace ThemeManager {
     void
     ForEachUTheme(const MetadataFunction& func) {
         auto uthemes = safe_uthemes_map.lock();
-        for (auto [index, path_meta] : *uthemes | std::views::enumerate)
-            func(index, path_meta.first, path_meta.second);
+        for (const auto& [path, meta] : *uthemes)
+            func(path, meta);
     }
 
 } // namespace ThemeManager

@@ -69,8 +69,6 @@ namespace HomeScreen {
         queueStyleMiiUPrompt = true;
 #endif
 
-        cout << "styleMiiUExists: " << styleMiiUExists << endl;
-
         isFirstBoot = SettingsScreen::check_is_first_boot();
     }
 
@@ -175,7 +173,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_CODE " Developers:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Fangal-Airbag");
             ImGui::BulletText("AlphaCraft9658");
             ImGui::BulletText("Daniel K. O. (dkosmari)");
@@ -185,7 +183,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_PAINT_BRUSH " UI Design:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Perrohuevo");
             ImGui::BulletText("dewgong");
             ImGui::BulletText("Daniel K. O. (dkosmari)");
@@ -195,7 +193,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_FONT " Fonts:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Wii U System Font");
             ImGui::BulletText("FontAwesome");
         }
@@ -216,7 +214,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_GITHUB " GitHub:");
         {
-            Indent _;
+            Indent one;
             ImGui::Bullet();
             ImGui::TextLink("https://github.com/ThemeCafe/Themiify");
         }
@@ -225,7 +223,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_STAR " Special thanks:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Juanen100 for the StyleMiiU Aroma Plugin!");
             ImGui::BulletText("The Theme Café Discord mods, devs and founders!");
             ImGui::BulletText("Gatto for the incredible Theme Café docs!");

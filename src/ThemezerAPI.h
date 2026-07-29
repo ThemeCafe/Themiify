@@ -200,7 +200,9 @@ namespace ThemezerAPI {
             std::string version;
         };
 
-        using CheckUpdatesSpec = std::vector<WiiuCheckUpdatesItemInput>;
+        struct CheckUpdatesSpec {
+            std::vector<WiiuCheckUpdatesItemInput> items;
+        };
 
         using CheckUpdatesResponseSignature = void(const WiiuBaseVec& themes);
         using CheckUpdatesResponseFunction =

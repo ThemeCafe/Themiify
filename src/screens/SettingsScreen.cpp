@@ -152,7 +152,7 @@ namespace SettingsScreen {
 
         void
         show_special_files_options() {
-            ImGui::RAII::Indent _;
+            ImGui::RAII::Indent one;
 
             if (UI::Button("Check integrity of Wii U Menu files"))
                 SettingsPopup::open(SettingsPopup::OpenState::integrity);
@@ -172,7 +172,7 @@ namespace SettingsScreen {
         show_stylemiiu_options() {
             using namespace ImGui::RAII;
 
-            Indent _;
+            Indent one;
 
             if (auto cfg = PluginManager::GetConfig()) {
 
@@ -191,7 +191,7 @@ namespace SettingsScreen {
                 ImGui::SetItemTooltip("Set \"showNotification\"");
 
                 if (UI::CollapsingHeader("Enabled themes:")) {
-                    Indent _2;
+                    Indent two;
                     const ImVec2 themes_size = {
                         0,
                         8 * ImGui::GetTextLineHeightWithSpacing()
@@ -202,7 +202,7 @@ namespace SettingsScreen {
                         auto available_width = ImGui::GetContentRegionAvail().x;
                         ItemWidth set_width{available_width};
                         ThemeManager::ForEachInstalledTheme(
-                            [](std::size_t, const ThemeManager::ConstThemePtr& theme)
+                            [](const ThemeManager::ConstThemePtr& theme)
                             {
                                 bool enabled = PluginManager::IsEnabled(theme->path);
                                 if (UI::Checkbox("##" + theme->path.filename().string(),

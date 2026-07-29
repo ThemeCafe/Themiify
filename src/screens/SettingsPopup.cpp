@@ -585,7 +585,7 @@ namespace SettingsPopup {
             ImGui::Text("The following files appear to be modified: ");
 
             {
-                Indent _;
+                Indent one;
                 auto modified_files = safe_modified_files.c_lock();
                 for (auto &file : *modified_files) {
                     ImGui::Text(file.string());

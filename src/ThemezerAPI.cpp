@@ -17,6 +17,7 @@
 #include <glaze/json/generic.hpp>
 #include <glaze/json/read.hpp>
 #include <glaze/json/write.hpp>
+#include <glaze/exceptions/json_exceptions.hpp>
 
 #include "ThemezerAPI.h"
 #include "graphql.h"
@@ -200,12 +201,15 @@ query CheckUpdates($items: [WiiuCheckUpdatesItemInput!]!) {
                 mutable
             {
                 finish_api_call();
-                auto& wiiu_obj = data.at("wiiu");
-                auto& checkUpdates = wiiu_obj.at("checkUpdates");
+                auto& gen_wiiu = data.at("wiiu");
+                auto& gen_checkUpdates = gen_wiiu.at("checkUpdates")
+                    .get<graphql::generic::array_t>();
+
                 WiiuBaseVec themes;
-                if (auto error = glz::read_json(themes, checkUpdates))
-                    throw std::runtime_error{"glz::read_json() failed: "
-                                             + glz::format_error(error, checkUpdates)};
+                themes.reserve(gen_checkUpdates.size());
+
+                for (auto& item : gen_checkUpdates)
+                    themes.push_back(glz::ex::read_json<WiiuBase>(item));
 
                 if (callback)
                     callback(themes);
@@ -251,19 +255,16 @@ query LookupByQuickId($quickId: String!) {
 
                     finish_api_call();
 
-                    auto& wiiu_obj = data.at("wiiu");
-                    auto& lookup_obj = wiiu_obj.at("lookupByQuickId");
+                    auto& gen_wiiu = data.at("wiiu");
+                    auto& gen_lookupByQuickId = gen_wiiu.at("lookupByQuickId");
 
-                    if (lookup_obj.is_null())
+                    if (gen_lookupByQuickId.is_null())
                         throw std::runtime_error{"no theme found"};
 
-                    auto result = glz::read_json<WiiuInstallThemeLookup>(lookup_obj);
-                    if (!result)
-                        throw std::runtime_error{"glz::read_json() failed: "s
-                                                 + glz::format_error(result.error(), lookup_obj)};
+                    auto result = glz::ex::read_json<WiiuInstallThemeLookup>(gen_lookupByQuickId);
 
                     if (callback)
-                        callback(*result);
+                        callback(result);
                 };
 
             start_api_call();
@@ -335,19 +336,16 @@ query Theme($hexId: String!) {
 
                 finish_api_call();
 
-                auto& wiiu_obj = data.at("wiiu");
-                auto& theme_obj = wiiu_obj.at("theme");
+                auto& gen_wiiu = data.at("wiiu");
+                auto& gen_theme = gen_wiiu.at("theme");
 
-                if (theme_obj.is_null())
+                if (gen_theme.is_null())
                     throw std::runtime_error{"no theme found"};
 
-                auto result = glz::read_json<WiiuThemeFull>(theme_obj);
-                if (!result)
-                    throw std::runtime_error{"glz::read_json() failed: "s
-                                             + glz::format_error(result.error(), theme_obj)};
+                auto result = glz::ex::read_json<WiiuThemeFull>(gen_theme);
 
                 if (callback)
-                    callback(*result);
+                    callback(result);
             };
 
             start_api_call();
@@ -406,23 +404,17 @@ query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String
             {
                 finish_api_call();
 
-                auto& wiiu_obj = data.at("wiiu");
-                auto& themes_obj = wiiu_obj.at("themes");
+                auto& gen_wiiu = data.at("wiiu");
+                auto& gen_themes = gen_wiiu.at("themes");
+                auto& gen_nodes = gen_themes.at("nodes").get<graphql::generic::array_t>();
+                auto& gen_pageInfo = gen_themes.at("pageInfo");
 
-                auto& nodes = themes_obj.at("nodes").get<graphql::generic::array_t>();
-                WiiuThemeSmallVec themes(nodes.size());
+                WiiuThemeSmallVec themes;
+                themes.reserve(gen_nodes.size());
+                for (auto node : gen_nodes)
+                    themes.push_back(glz::ex::read_json<WiiuThemeSmall>(node));
 
-                for (auto [theme, node] : std::views::zip(themes, nodes)) {
-                    if (auto error = glz::read_json(theme, node))
-                        throw std::runtime_error{"glz::read_json() failed: "
-                                                 + glz::format_error(error, node)};
-                }
-
-                auto& pageInfo_obj = themes_obj.at("pageInfo");
-                PageInfo pageInfo;
-                if (auto error = glz::read_json(pageInfo, pageInfo_obj))
-                    throw std::runtime_error{"glz::read_json() failed: "
-                                             + glz::format_error(error, pageInfo_obj)};
+                auto pageInfo = glz::ex::read_json<PageInfo>(gen_pageInfo);
 
                 if (callback)
                     callback(themes, pageInfo);

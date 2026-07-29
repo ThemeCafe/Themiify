@@ -200,13 +200,13 @@ namespace App {
         fontConfig.EllipsisChar = U'…';
 #ifdef IMGUI_ENABLE_FREETYPE
         // WORKAROUND: the freetype backend seems to misalign fonts merged with FontAwesome
-        fontConfig.GlyphOffset.y = -style.FontSizeBase * (1.0f / 8.0f);
+        fontConfig.GlyphOffset.y = - style.FontSizeBase * (1.0f / 8.0f);
 #endif
         void *fontData = nullptr;
         uint32_t fontSize = 0;
         OSGetSharedData(OS_SHAREDDATATYPE_FONT_STANDARD, 0, &fontData, &fontSize);
-
         io.Fonts->AddFontFromMemoryTTF(fontData, fontSize, style.FontSizeBase, &fontConfig);
+
         fontConfig.MergeMode = true;
         io.Fonts->AddFontFromFileTTF("fs:/vol/content/fonts/fontawesome-webfont.ttf", style.FontSizeBase, &fontConfig);
         io.Fonts->AddFontFromFileTTF("fs:/vol/content/fonts/InterVariable.ttf", style.FontSizeBase, &fontConfig);

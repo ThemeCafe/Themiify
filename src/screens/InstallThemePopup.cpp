@@ -246,6 +246,7 @@ namespace InstallThemePopup {
         success_handler() {
             state = State::success;
             scroll_to_bottom = true;
+            ManageThemesScreen::request_update_check();
         }
 
 

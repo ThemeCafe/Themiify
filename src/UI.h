@@ -18,6 +18,13 @@
 
 namespace UI {
 
+    extern const ImVec4 enabled_color;
+    extern const ImVec4 installed_color;
+    extern const ImVec4 update_color;
+
+    extern const std::string installed_icon;
+    extern const std::string update_icon;
+
     struct ButtonHBox {
 
         using ClickCallbackSignature = void();

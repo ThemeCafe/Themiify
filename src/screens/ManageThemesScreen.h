@@ -17,4 +17,6 @@ namespace ManageThemesScreen {
     void finalize();
 
     void process_ui();
+
+    void request_update_check();
 }
