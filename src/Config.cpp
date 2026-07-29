@@ -40,14 +40,6 @@ namespace Config {
 
         const std::filesystem::path settings_path = THEMIIFY_ROOT / "settings.json";
 
-        /*-----------------------*/
-        /* Function declarations */
-        /*-----------------------*/
-
-        /*----------------------*/
-        /* Function definitions */
-        /*----------------------*/
-
     } // namespace
 
     /*------------------*/
