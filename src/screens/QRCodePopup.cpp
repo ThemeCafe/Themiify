@@ -11,13 +11,13 @@
 
 #include "../Camera.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "DownloadThemePopup.h"
 
 #include <iostream>
 #include <cstring>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -59,8 +59,6 @@ namespace QRCodePopup {
 
         quirc* qr = nullptr;
         unsigned scan_frame_counter;
-
-        Mix_Chunk *scan_sound;
 
         /*-----------------------*/
         /* Function declarations */
@@ -117,11 +115,11 @@ namespace QRCodePopup {
                                         data.payload_len);
 
                     cout << "QR payload: \"" << payload << "\"" << endl;
-                    Mix_PlayChannel(-1, scan_sound, 0);
+                    UI::PlaySFXQRScan();
 
                     if (payload.starts_with("http://") ||
                         payload.starts_with("https://")) {
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup(true);
                         DownloadThemePopup::open(payload);
                     } else {
                         // TODO: report error, only URLs can be scanned
@@ -165,16 +163,12 @@ namespace QRCodePopup {
     initialize() {
         TRACE_FUNC;
 
-        scan_sound = Mix_LoadWAV("fs:/vol/content/sound/qr-scan.wav");
-
         state = State::hidden;
     }
 
     void
     finalize() {
         TRACE_FUNC;
-
-        Mix_FreeChunk(scan_sound);
     }
 
     void
@@ -193,7 +187,7 @@ namespace QRCodePopup {
         }
 
         if (state == State::queued) {
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             state = State::visible;
         }
 
@@ -211,6 +205,8 @@ namespace QRCodePopup {
         };
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }

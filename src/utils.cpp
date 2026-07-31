@@ -9,6 +9,7 @@
 
 #include <cctype>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <locale>
 #include <ranges>
@@ -167,25 +168,69 @@ split(const std::string& input,
 
 std::string
 join(const std::vector<std::string>& tokens,
-     const std::string& separator)
+     const std::string& separator,
+     bool compress)
 {
     if (tokens.empty())
         return "";
 
     // Optimize allocation for result: calculate the final capacity.
     std::string::size_type size = 0;
-    for (const auto& token : tokens)
-        size += token.size();
-    size += (tokens.size() - 1) * separator.size();
-
     std::string result;
-    result.reserve(size);
 
-    for (auto [index, token] : tokens | std::views::enumerate) {
-        if (index > 0)
-            result += separator;
-        result += token;
+    if (compress) {
+
+        // skip empty tokens, as if they don't exist
+        std::string::size_type n = 0; // how many non-empty tokens
+        for (const auto& token : tokens) {
+            if (token.empty())
+                continue;
+            size += token.size();
+            ++n;
+        }
+        size += (n - 1) * separator.size();
+
+        result.reserve(size);
+        for (const auto& token : tokens) {
+            if (token.empty())
+                continue;
+            if (!result.empty())
+                result += separator;
+            result += token;
+        }
+
+    } else {
+
+        // not compressing, will treat empty strings as valid tokens
+        for (const auto& token : tokens)
+            size += token.size();
+        size += (tokens.size() - 1) * separator.size();
+
+        result.reserve(size);
+        for (const auto& token: tokens) {
+            if (!result.empty())
+                result += separator;
+            result += token;
+        }
+
     }
 
+    return result;
+}
+
+std::vector<char>
+load_file(const std::filesystem::path& filename) {
+    std::vector<char> result;
+    if (!exists(filename))
+        return {};
+    result.reserve(file_size(filename));
+    std::filebuf file;
+    if (file.open(filename,
+                  std::ios::in | std::ios::binary)) {
+        char buf[4096];
+        std::streamsize read;
+        while ((read = file.sgetn(buf, sizeof buf)) > 0)
+            result.append_range(std::span(buf, read));
+    }
     return result;
 }

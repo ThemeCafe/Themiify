@@ -29,7 +29,7 @@
 #include <vector>
 
 #include <curl/curl.h>
-#include <SDL2/SDL_image.h>
+#include <SDL_image.h>
 #include <imgui_stdlib.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
@@ -69,7 +69,7 @@ namespace ImageLoader {
 
     std::optional<Resources> resources;
 
-    std::string user_agent = App::user_agent;
+    std::string user_agent;
 
     const std::filesystem::path content_prefix = "fs:/vol/content";
 
@@ -236,8 +236,11 @@ namespace ImageLoader {
 
     void background_loader(std::stop_token token);
 
-    void initialize(SDL_Renderer* rend)
+    void initialize(SDL_Renderer* rend,
+                    const std::string& user_agent_)
     {
+        user_agent = user_agent_;
+
         resources.emplace();
         COUT.rdbuf()->set_emit_on_sync(true);
         CERR.rdbuf()->set_emit_on_sync(true);

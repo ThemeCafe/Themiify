@@ -18,4 +18,4 @@
 	url = https://github.com/dlbeer/quirc.git
 [submodule "external/hips"]
 	path = external/hips
-	url = https://github.com/wheremyfoodat/Hips.git
+	url = https://github.com/dkosmari/Hips.git

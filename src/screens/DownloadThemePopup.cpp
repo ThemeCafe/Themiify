@@ -108,15 +108,15 @@ namespace DownloadThemePopup {
         show_confirmation() {
             UI::Title("Download Confirmation");
 
-            ImGui::TextWrapped("Would you like to download the theme:\n%s ?",
-                               transfer_name.c_str());
+            ImGui::FormatTextWrapped("Would you like to download the theme:\n{} ?",
+                                     transfer_name);
 
             UI::ButtonHBox buttons;
             buttons.valign = 1.0f;
             buttons.add(ICON_FA_TIMES " Cancel",
                         []
                         {
-                            ImGui::CloseCurrentPopup();
+                            UI::CloseCurrentPopup();
                             state = State::hidden;
                         });
             buttons.add(ICON_FA_DOWNLOAD " Download",
@@ -143,7 +143,7 @@ namespace DownloadThemePopup {
 
             ImGui::TextWrapped(utheme_url);
 
-            ImGui::TextWrapped("Saving to: %s", utheme_filename.filename().c_str());
+            ImGui::FormatTextWrapped("Saving to: {}", utheme_filename.filename().string());
 
             auto info = DownloadManager::get_info(utheme_url);
 
@@ -166,7 +166,7 @@ namespace DownloadThemePopup {
 
             ImGui::TextWrapped(error_message);
 
-            if (ImGui::Button("Close")) {
+            if (UI::Button("Close")) {
                 DownloadManager::clear_all();
                 state = State::hidden;
             }
@@ -181,25 +181,30 @@ namespace DownloadThemePopup {
             const std::string enable_label =
                 (PluginManager::IsShuffling() ? "Enable"s : "Apply"s)
                 + " theme after installation"s;
-            ImGui::Checkbox(enable_label, enable_theme);
+            UI::Checkbox(enable_label, enable_theme);
 
             UI::ButtonHBox buttons;
             buttons.valign = 1.0f;
             buttons.add(ICON_FA_TIMES " Cancel",
                         []
                         {
-                            ImGui::CloseCurrentPopup();
+                            UI::CloseCurrentPopup();
                             state = State::hidden;
                         });
             buttons.add(ICON_FA_COGS " Install",
                         true,
                         []
                         {
-                            ImGui::CloseCurrentPopup();
                             state = State::hidden;
                             // TODO: report error if a .utheme is missing metadata.
-                            if (auto meta = ThemeManager::ReadUThemeMetadata(utheme_filename))
-                                InstallThemePopup::open(utheme_filename, meta, true, enable_theme);
+                            auto meta = ThemeManager::ReadUThemeMetadata(utheme_filename);
+                            bool silent_close = !!meta;
+                            UI::CloseCurrentPopup(silent_close);
+                            if (meta)
+                                InstallThemePopup::open(utheme_filename,
+                                                        meta,
+                                                        true,
+                                                        enable_theme);
                         });
             buttons.show();
         }
@@ -229,6 +234,16 @@ namespace DownloadThemePopup {
     }
 
     void
+    open(const ThemezerAPI::WiiuInstallThemeLookup &theme)
+    {
+        state = State::queued;
+        transfer_name = theme.name;
+        utheme_url = theme.downloadUrl;
+        utheme_filename = ThemeManager::CalcUThemePath(theme.name, theme.quickId);
+        error_message.clear();
+    }
+
+    void
     process_ui() {
         using namespace ImGui::RAII;
         if (state == State::hidden)
@@ -236,7 +251,7 @@ namespace DownloadThemePopup {
 
         if (state == State::queued) {
             // NOTE: open popup before we create the popup.
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             state = State::confirmation;
         }
 
@@ -251,6 +266,8 @@ namespace DownloadThemePopup {
                          ImGuiWindowFlags_NoSavedSettings};
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }

@@ -11,7 +11,7 @@
 
 #include <filesystem>
 #include <string>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "../ThemeManager.h"
 #include "../ThemezerAPI.h"
 

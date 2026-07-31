@@ -18,7 +18,9 @@
 
 #include <curl/curl.h>
 
-#include <glaze/json.hpp>
+#include <glaze/json/generic.hpp>
+#include <glaze/json/read.hpp>
+#include <glaze/json/write.hpp>
 
 #include "graphql.h"
 #include "byte_stream.hpp"
@@ -95,7 +97,7 @@ namespace graphql {
 
         request(const std::string& url,
                 const std::string& query,
-                const glz::generic& variables,
+                const generic& variables,
                 data_function_t data_func,
                 errors_function_t errors_func,
                 exception_function_t exception_func)
@@ -104,7 +106,7 @@ namespace graphql {
               errors_func{std::move(errors_func)},
               exception_func{std::move(exception_func)}
         {
-            glz::generic post;
+            generic post;
             post["query"] = query;
 
             if (!variables.empty())
@@ -148,7 +150,7 @@ namespace graphql {
                 throw std::runtime_error{"Content-Type should be application/json, but got \""s
                                          + ct + "\"\ncontent:\n"s + response_str};
 
-            glz::generic parsed;
+            generic parsed;
             auto error = glz::read_json(parsed, response_str);
 
             if (error)
@@ -165,7 +167,7 @@ namespace graphql {
             on_exception(e);
         }
 
-        void on_data(const glz::generic& data) noexcept
+        void on_data(const generic& data) noexcept
         try {
             if (data_func)
                 data_func(data);
@@ -177,7 +179,7 @@ namespace graphql {
             cerr << "ERROR: request::on_data() caught an exception!" << endl;
         }
 
-        void on_errors(const glz::generic& errors) noexcept
+        void on_errors(const generic& errors) noexcept
         try {
             if (errors_func)
                 errors_func(errors);
@@ -342,7 +344,7 @@ namespace graphql {
 
     token get_async(const std::string& url,
                     const std::string& query,
-                    const glz::generic& variables,
+                    const generic& variables,
                     data_function_t data_func,
                     errors_function_t errors_func,
                     exception_function_t exception_func)
@@ -368,7 +370,7 @@ namespace graphql {
                     errors_function_t errors_func,
                     exception_function_t exception_func)
     {
-        glz::generic variables;
+        generic variables;
 
         if (auto error = glz::read_json(variables, variables_json))
             throw std::runtime_error{"glz::read_json() failed: "
@@ -384,15 +386,15 @@ namespace graphql {
         );
     }
 
-    glz::generic get_sync(const std::string& url,
+    generic get_sync(const std::string& url,
                           const std::string& query,
-                          const glz::generic& variables)
+                          const generic& variables)
     {
         TRACE_FUNC;
 
         easy_handle easy{url};
 
-        glz::generic post;
+        generic post;
         post["query"] = query;
 
         if (!variables.empty())
@@ -431,7 +433,7 @@ namespace graphql {
 
         auto response_str = response.read_str();
 
-        glz::generic result;
+        generic result;
         auto error = glz::read_json(result, response_str);
 
         if (error)
@@ -441,11 +443,11 @@ namespace graphql {
         return result;
     }
 
-    glz::generic get_sync(const std::string& url,
+    generic get_sync(const std::string& url,
                           const std::string& query,
                           const std::string& variables_json)
     {
-        glz::generic variables;
+        generic variables;
 
         if (auto error = glz::read_json(variables, variables_json))
             throw std::runtime_error{"glz::read_json() failed: "

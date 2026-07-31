@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <string>
 
 namespace ThemezerScreen {
@@ -19,5 +19,5 @@ namespace ThemezerScreen {
 
     void process_ui();
 
-    void fetch_theme_by_id(const std::string& hex_id);
+    void fetch_theme_by_quick_id(const std::string& quick_id);
 }

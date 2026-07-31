@@ -8,22 +8,25 @@
  */
 
 #include "SettingsScreen.h"
-#include "SettingsPopup.h"
+
+#include "../App.h"
+#include "../Config.h"
+#include "../IconsFontAwesome4.h"
 #include "../NavBar.h"
 #include "../PluginManager.h"
 #include "../ThemeManager.h"
-#include "../utils.h"
 #include "../tracer.hpp"
+#include "../UI.h"
+#include "../utils.h"
+#include "SettingsPopup.h"
 
 #include <iostream>
 
-#include <SDL2/SDL_mixer.h>
+#include <SDL_mixer.h>
 
 #include <imgui.h>
 #include <imgui_raii.h>
-
-#include <glaze/exceptions/json_exceptions.hpp>
-#include <glaze/json.hpp>
+#include <imgui_stdlib.h>
 
 // Define this to help seeing the padding and spacing values for windows.
 // #define DEBUG_BG_COLOR
@@ -32,30 +35,11 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+using Config::cfg;
+
 namespace SettingsScreen {
 
     namespace {
-
-        /*-------*/
-        /* Types */
-        /*-------*/
-
-        struct Settings {
-            bool is_first_boot = true;
-            bool check_integrity_at_boot = false;
-            int music_volume = 75;
-        };
-
-        /*-----------*/
-        /* Constants */
-        /*-----------*/
-
-        // Don't error out when unknown fields are found, to allow users to downgrade.
-        constexpr glz::opts read_opts = { .error_on_unknown_keys = false };
-
-        constexpr glz::opts write_opts = { .prettify = true };
-
-        const std::filesystem::path settings_path = THEMIIFY_ROOT / "settings.json";
 
         /*-----------*/
         /* Variables */
@@ -63,157 +47,116 @@ namespace SettingsScreen {
 
         bool bootIntegrityCheckPending;
 
-        Settings settings;
-
         /*-----------------------*/
         /* Function declarations */
         /*-----------------------*/
 
         void
-        load_settings();
+        help_marker(const std::string& msg,
+                    bool same_line = true);
 
         void
-        save_settings();
+        show_sound_options();
+
+        void
+        show_special_files_options();
+
+        void
+        show_stylemiiu_options();
 
         /*----------------------*/
         /* Function definitions */
         /*----------------------*/
 
         void
-        load_settings() {
-            TRACE_FUNC;
-            try {
-                glz::ex::read_file_json<read_opts>(settings,
-                                                   settings_path.string(),
-                                                   std::string{});
-            }
-            catch (std::exception& e) {
-                cerr << "ERROR loading settings: " << e.what() << endl;
+        help_marker(const std::string& msg,
+                    bool same_line) {
+            using namespace ImGui::RAII;
+            if (same_line)
+                ImGui::SameLine();
+            ImGui::TextDisabled(ICON_FA_QUESTION_CIRCLE);
+            if (ItemTooltip tooltip{}) {
+                TextWrapPos text_wrap{600};
+                ImGui::Text(msg);
             }
         }
 
         void
-        save_settings() {
-            TRACE_FUNC;
-            try {
-                create_directories(THEMIIFY_ROOT);
-                glz::ex::write_file_json<write_opts>(settings,
-                                                     settings_path.string(),
-                                                     std::string{});
+        show_sound_options() {
+            using namespace ImGui::RAII;
+
+            Indent one;
+
+            ImGui::Text("Sound effects volume");
+            {
+                Indent two;
+                if (ImGui::Slider("##sfx_volume", cfg.sfx_volume, 0, 100, "%d%%")) {
+                    cout << "updated sfx volume" << endl;
+                    App::update_mixer_volumes();
+                }
+                if (ImGui::IsItemActivated() || ImGui::IsItemDeactivated())
+                    UI::PlaySFXClick();
+                help_marker("Set the volume of sound effects.");
             }
-            catch (std::exception& e) {
-                cerr << "ERROR saving settings: " << e.what() << endl;
+
+            ImGui::Text("Background music volume:");
+            {
+                Indent two;
+                if (ImGui::Slider("##bgm_volume", cfg.music_volume, 0, 100, "%d%%"))
+                    App::update_mixer_volumes();
+                if (ImGui::IsItemActivated() || ImGui::IsItemDeactivated())
+                    UI::PlaySFXClick();
+                help_marker("Set the volume of the background music.");
             }
+
+            if (Mix_PlayingMusic())
+                ImGui::FormatTextWrapped("Playing \"{}\" by \"{}\"",
+                                         Mix_GetMusicTitleTag(nullptr),
+                                         Mix_GetMusicArtistTag(nullptr));
         }
 
-    } // namespace
+        void
+        show_special_files_options() {
+            ImGui::RAII::Indent one;
 
-    /*------------------*/
-    /* Public functions */
-    /*------------------*/
-
-    void
-    initialize(SDL_Renderer * /*renderer*/) {
-        TRACE_FUNC;
-
-        create_directories(THEMIIFY_ROOT);
-
-        load_settings();
-
-        bootIntegrityCheckPending = settings.check_integrity_at_boot;
-        int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
-        Mix_VolumeMusic(mix_volume);
-    }
-
-    void
-    finalize() {
-        TRACE_FUNC;
-
-        save_settings();
-    }
-
-    void
-    process_ui() {
-        using namespace ImGui::RAII;
-
-#ifdef DEBUG_BG_COLOR
-        StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
-#endif
-        Child settings_content{"SettingsContent", {0, 0},
-                               ImGuiChildFlags_AlwaysUseWindowPadding};
-        if (!settings_content)
-            return;
-
-        {
-            Font font_guard{nullptr, 45};
-            ImGui::Text("Settings");
-        }
-
-        ImGui::SameLine();
-
-        {
-            Font font_guard{nullptr, 25};
-            // Show text right-aligned.
-            std::string text = "Themiify v" THEMIIFY_VERSION;
-            auto text_size = ImGui::CalcTextSize(text);
-            auto available = ImGui::GetContentRegionAvail();
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - text_size.x);
-            ImGui::Text(text);
-        }
-
-        ImGui::SeparatorText("Special files");
-        {
-            Indent _;
-            if (ImGui::Button("Check integrity of Wii U Menu files")) {
+            if (UI::Button("Check integrity of Wii U Menu files"))
                 SettingsPopup::open(SettingsPopup::OpenState::integrity);
-            }
 
             ImGui::SameLine();
 
-            ImGui::Checkbox("Check at every boot", settings.check_integrity_at_boot);
+            UI::Checkbox("Check at every boot", cfg.check_integrity_at_boot);
 
-            if (ImGui::Button("Dump Wii U Menu files")) {
+            if (UI::Button("Dump Wii U Menu files"))
                 SettingsPopup::open(SettingsPopup::OpenState::dump);
-            }
 
-            if (ImGui::Button("Clear Themiify cache")) {
+            if (UI::Button("Clear Themiify cache"))
                 SettingsPopup::open(SettingsPopup::OpenState::cache);
-            }
         }
 
-        ImGui::SeparatorText("Sound options");
-        {
-            Indent _;
-            ImGui::Text("Background music volume level:");
-            if (ImGui::SliderInt("##volume", &settings.music_volume, 0, 100, "%d%%")) {
+        void
+        show_stylemiiu_options() {
+            using namespace ImGui::RAII;
 
-                int mix_volume = (settings.music_volume * MIX_MAX_VOLUME) / 100;
-                Mix_VolumeMusic(mix_volume);
-            }
-        }
+            Indent one;
 
-        ImGui::SeparatorText("StyleMiiU options");
-        {
-            Indent _;
+            if (auto pcfg = PluginManager::GetConfig()) {
 
-            if (auto cfg = PluginManager::GetConfig()) {
+                UI::Checkbox("Enable plugin", pcfg->themeManagerEnabled);
+                help_marker("Set \"themeManagerEnabled\"");
 
-                ImGui::Checkbox("Enable plugin", cfg->themeManagerEnabled);
-                ImGui::SetItemTooltip("Set \"themeManagerEnabled\"");
-
-                bool shuffle_value = cfg->shuffleThemes;
-                if (ImGui::Checkbox("Shuffle themes", shuffle_value))
+                bool shuffle_value = pcfg->shuffleThemes;
+                if (UI::Checkbox("Shuffle themes", shuffle_value))
                     PluginManager::ToggleShuffling();
-                ImGui::SetItemTooltip("Set \"suffleThemes\""); // NOTE: typo
+                help_marker("Set \"suffleThemes\""); // NOTE: typo
 
-                ImGui::Checkbox("Mash up themes", cfg->mashupThemes);
-                ImGui::SetItemTooltip("Set \"mashupThemes\"");
+                UI::Checkbox("Mash up themes", pcfg->mashupThemes);
+                help_marker("Set \"mashupThemes\"");
 
-                ImGui::Checkbox("Show notifications", cfg->showNotification);
-                ImGui::SetItemTooltip("Set \"showNotification\"");
+                UI::Checkbox("Show notifications", pcfg->showNotification);
+                help_marker("Set \"showNotification\"");
 
-                if (ImGui::CollapsingHeader("Enabled themes:")) {
-                    Indent _2;
+                if (UI::CollapsingHeader("Enabled themes:")) {
+                    Indent two;
                     const ImVec2 themes_size = {
                         0,
                         8 * ImGui::GetTextLineHeightWithSpacing()
@@ -224,10 +167,10 @@ namespace SettingsScreen {
                         auto available_width = ImGui::GetContentRegionAvail().x;
                         ItemWidth set_width{available_width};
                         ThemeManager::ForEachInstalledTheme(
-                            [](std::size_t, const ThemeManager::ConstThemePtr& theme)
+                            [](const ThemeManager::ConstThemePtr& theme)
                             {
                                 bool enabled = PluginManager::IsEnabled(theme->path);
-                                if (ImGui::Checkbox("##" + theme->path.filename().string(),
+                                if (UI::Checkbox("##" + theme->path.filename().string(),
                                                     enabled)) {
                                     if (enabled)
                                         PluginManager::Enable(theme->path);
@@ -241,17 +184,98 @@ namespace SettingsScreen {
                     }
                 }
 
-                if (ImGui::Button("Manage installed themes..."))
+                if (UI::Button("Manage installed themes..."))
                     NavBar::set_current_tab(NavBar::Tab::manage_themes);
-                ImGui::SetItemTooltip("Set \"enabledThemes\"");
+                help_marker("Set \"enabledThemes\"");
 
             } else {
                 ImGui::TextWrapped("Could not parse StyleMiiU configuration.");
             }
 
-            if (ImGui::Button("Delete Style Mii U configuration")) {
+            if (UI::Button("Delete Style Mii U configuration")) {
                 PluginManager::DeleteConfig();
             }
+        }
+
+        void
+        show_themezer_options() {
+            using namespace ImGui::RAII;
+
+            Indent one;
+
+            UI::Checkbox("Check for theme updates on startup",
+                         cfg.check_themezer_updates_at_boot);
+            help_marker("Will automaticaly connect to Themezer to check for updates"
+                        " from the Manage Installed Themes screen.");
+        }
+
+    } // namespace
+
+    /*------------------*/
+    /* Public functions */
+    /*------------------*/
+
+    void
+    initialize(SDL_Renderer * /*renderer*/) {
+        TRACE_FUNC;
+        bootIntegrityCheckPending = cfg.check_integrity_at_boot;
+    }
+
+    void
+    finalize() {
+        TRACE_FUNC;
+    }
+
+    void
+    process_ui() {
+        using namespace ImGui::RAII;
+
+        {
+            // NOTE: use a nested scope to not propagate changes to the popup.
+#ifdef DEBUG_BG_COLOR
+            StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
+#endif
+            StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
+            if (Child settings_content{"SettingsContent", {0, 0},
+                                       ImGuiChildFlags_AlwaysUseWindowPadding}) {
+                {
+                    Font font_guard{nullptr, 55};
+                    ImGui::Text("Settings");
+                }
+
+                ImGui::SameLine();
+
+                {
+                    Font font_guard{nullptr, 25};
+                    // Show text right-aligned.
+                    const std::string text = "Themiify v" THEMIIFY_VERSION;
+                    auto text_size = ImGui::CalcTextSize(text);
+                    auto available = ImGui::GetContentRegionAvail();
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - text_size.x);
+                    ImGui::Text(text);
+                }
+
+                ImGui::Separator();
+
+                // Put options on their own child window, to scroll.
+                if (Child settings_items{"SettingsOptions"}) {
+
+                    if (UI::CollapsingHeader("Special files"))
+                        show_special_files_options();
+
+                    if (UI::CollapsingHeader("Themezer options"))
+                        show_themezer_options();
+
+                    if (UI::CollapsingHeader("Sound options"))
+                        show_sound_options();
+
+                    if (UI::CollapsingHeader("StyleMiiU options"))
+                        show_stylemiiu_options();
+
+                }
+
+            }
+
         }
 
         SettingsPopup::process_ui();
@@ -259,7 +283,7 @@ namespace SettingsScreen {
 
     bool
     check_is_first_boot() {
-        return settings.is_first_boot;
+        return cfg.is_first_boot;
     }
 
     void
@@ -274,15 +298,12 @@ namespace SettingsScreen {
 
     void
     run_first_boot_check() {
-        if (!settings.is_first_boot)
+        if (!cfg.is_first_boot)
             return;
 
         SettingsPopup::open(SettingsPopup::OpenState::force_integrity);
 
-        settings.is_first_boot = false;
-        save_settings();
-
-        settings.is_first_boot = false;
+        cfg.is_first_boot = false;
     }
 
 } // namespace SettingsScreen

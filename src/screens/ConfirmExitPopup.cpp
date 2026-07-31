@@ -49,7 +49,7 @@ namespace ConfirmExitPopup {
 
         if (state == State::queued) {
             state = State::visible;
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
         }
 
         const auto center = ImGui::GetMainViewport()->GetCenter();
@@ -60,6 +60,8 @@ namespace ConfirmExitPopup {
                          ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoSavedSettings};
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }
@@ -72,14 +74,14 @@ namespace ConfirmExitPopup {
         buttons.add(ICON_FA_TIMES " Cancel",
                     []
                     {
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup();
                         state = State::hidden;
                     });
         buttons.add(ICON_FA_SIGN_OUT " Exit",
                     true,
                     []
                     {
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup(true);
                         state = State::hidden;
                         App::quit();
                     });

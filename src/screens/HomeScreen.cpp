@@ -16,14 +16,16 @@
 #include "../PluginManager.h"
 #include "../ThemeManager.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "../utils.h"
 
 #include <iostream>
 #include <filesystem>
 #include <optional>
+#include <string>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 
 #include <imgui.h>
 #include <imgui_raii.h>
@@ -33,6 +35,7 @@
 using std::cout;
 using std::cerr;
 using std::endl;
+using namespace std::literals;
 
 // Define this to help seeing the padding and spacing values for windows.
 // #define DEBUG_BG_COLOR
@@ -65,8 +68,6 @@ namespace HomeScreen {
 #ifdef DEBUG_INJECT_STYLEMIIU_MISSING
         queueStyleMiiUPrompt = true;
 #endif
-
-        cout << "styleMiiUExists: " << styleMiiUExists << endl;
 
         isFirstBoot = SettingsScreen::check_is_first_boot();
     }
@@ -172,7 +173,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_CODE " Developers:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Fangal-Airbag");
             ImGui::BulletText("AlphaCraft9658");
             ImGui::BulletText("Daniel K. O. (dkosmari)");
@@ -182,7 +183,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_PAINT_BRUSH " UI Design:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Perrohuevo");
             ImGui::BulletText("dewgong");
             ImGui::BulletText("Daniel K. O. (dkosmari)");
@@ -192,7 +193,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_FONT " Fonts:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Wii U System Font");
             ImGui::BulletText("FontAwesome");
         }
@@ -213,7 +214,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_GITHUB " GitHub:");
         {
-            Indent _;
+            Indent one;
             ImGui::Bullet();
             ImGui::TextLink("https://github.com/ThemeCafe/Themiify");
         }
@@ -222,7 +223,7 @@ namespace HomeScreen {
 
         ImGui::Text(ICON_FA_STAR " Special thanks:");
         {
-            Indent _;
+            Indent one;
             ImGui::BulletText("Juanen100 for the StyleMiiU Aroma Plugin!");
             ImGui::BulletText("The Theme Café Discord mods, devs and founders!");
             ImGui::BulletText("Gatto for the incredible Theme Café docs!");
@@ -239,6 +240,7 @@ namespace HomeScreen {
 #ifdef DEBUG_BG_COLOR
         StyleColor blue_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
 #endif
+        StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
         Child home_content{"HomeContent", {0, 0}, ImGuiChildFlags_AlwaysUseWindowPadding};
         if (!home_content)
             return;
@@ -251,7 +253,7 @@ namespace HomeScreen {
 
             {
                 Font font{nullptr, 25};
-                ImGui::Text("v%s", THEMIIFY_VERSION);
+                ImGui::Text("v" THEMIIFY_VERSION);
             }
         }
 
@@ -280,7 +282,7 @@ namespace HomeScreen {
         if (Child scrollable_content{"scrollable_content"}) {
             show_current_theme();
 
-            if (ImGui::Button("Download Themes"))
+            if (UI::Button("Download Themes"))
                 NavBar::set_current_tab(NavBar::Tab::themezer);
 
             ImGui::SameLine();
@@ -291,7 +293,7 @@ namespace HomeScreen {
                 std::string label = "Manage Installed Themes";
                 ImVec2 button_size = ImGui::CalcTextSize(label) + 2 * style.FramePadding;
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + available.x - button_size.x);
-                if (ImGui::Button(label, button_size))
+                if (UI::Button(label, button_size))
                     NavBar::set_current_tab(NavBar::Tab::manage_themes);
             }
 

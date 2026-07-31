@@ -10,7 +10,7 @@
 #include <iostream>
 #include <utility>
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -26,6 +26,7 @@
 #include "../PluginManager.h"
 #include "../ThemezerAPI.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "DeleteThemePopup.h"
 #include "DownloadThemePopup.h"
 #include "HomeScreen.h"
@@ -170,7 +171,7 @@ namespace ThemeDetailsPopup {
                 bool is_enabled = PluginManager::IsEnabled(installedTheme->path);
 
                 if (cfg && cfg->shuffleThemes) {
-                    if (ImGui::Checkbox("Enabled", is_enabled)) {
+                    if (UI::Checkbox("Enabled", is_enabled)) {
                         if (is_enabled)
                             PluginManager::Enable(installedTheme->path);
                         else
@@ -179,26 +180,31 @@ namespace ThemeDetailsPopup {
                 } else {
                     // Disable button if there's no config, or theme is already enabled.
                     Disabled disabled_if{!cfg || is_enabled};
-                    if (ImGui::Button(ICON_FA_STAR " Apply", {-1, 0})) {
+                    if (UI::Button(ICON_FA_STAR " Apply", {-1, 0})) {
                         PluginManager::Enable(installedTheme->path);
-                        ImGui::CloseCurrentPopup();
+                        UI::CloseCurrentPopup();
+                        state = State::hidden;
                     }
                 }
                 ImGui::SetItemDefaultFocus();
 
                 {
                     Disabled if_no_previews{installedTheme->previews.empty()};
-                    if (ImGui::Button(ICON_FA_EYE " Preview", {-1, 0}))
+                    if (UI::Button(ICON_FA_EYE " Preview", {-1, 0}))
                         ThemePreviewPopup::open(installedTheme->path,
                                                 installedTheme->previews);
                 }
 
-                if (ImGui::Button(ICON_FA_TRASH " Delete", {-1, 0})) {
+                if (UI::Button(ICON_FA_TRASH " Delete", {-1, 0})) {
+                    UI::CloseCurrentPopup(true);
+                    state = State::hidden;
                     DeleteThemePopup::open(installedTheme);
                 }
 
-                if (ImGui::Button(ICON_FA_TIMES " Close", {-1, 0}))
-                    ImGui::CloseCurrentPopup();
+                if (UI::Button(ICON_FA_TIMES " Close", {-1, 0})) {
+                    UI::CloseCurrentPopup();
+                    state = State::hidden;
+                }
             }
         }
     }
@@ -218,7 +224,7 @@ namespace ThemeDetailsPopup {
                 Font name_font{nullptr, 50};
                 ImGui::TextWrapped(fullTheme.name);
             }
-            ImGui::TextWrapped("by %s", fullTheme.creator.username.data());
+            ImGui::TextWrapped("by " + fullTheme.creator.username);
 
             // Put content in a scrollable child window.
             if (Child content{"content",
@@ -288,11 +294,14 @@ namespace ThemeDetailsPopup {
                 }
             }
 
-            if (ImGui::Button(ICON_FA_DOWNLOAD " Download", {-1, 0}))
+            if (UI::Button(ICON_FA_DOWNLOAD " Download", {-1, 0})) {
+                state = State::hidden;
+                UI::CloseCurrentPopup(true);
                 DownloadThemePopup::open(smallTheme);
+            }
             ImGui::SetItemDefaultFocus();
 
-            if (ImGui::Button(ICON_FA_EYE " Preview", {-1, 0}))
+            if (UI::Button(ICON_FA_EYE " Preview", {-1, 0}))
                 ThemePreviewPopup::open(fullTheme.hexId,
                                         std::vector<std::string>{
                                             fullTheme.collagePreview.hdUrl,
@@ -300,8 +309,10 @@ namespace ThemeDetailsPopup {
                                             fullTheme.waraWaraPlazaScreenshot.hdUrl
                                         });
 
-            if (ImGui::Button(ICON_FA_TIMES " Close", {-1, 0}))
-                ImGui::CloseCurrentPopup();
+            if (UI::Button(ICON_FA_TIMES " Close", {-1, 0})) {
+                UI::CloseCurrentPopup();
+                state = State::hidden;
+            }
         }
     }
 
@@ -312,7 +323,7 @@ namespace ThemeDetailsPopup {
             return;
 
         if (popup_queued) {
-            ImGui::OpenPopup(popup_id);
+            UI::OpenPopup(popup_id);
             popup_queued = false;
         }
 
@@ -325,6 +336,8 @@ namespace ThemeDetailsPopup {
                     ImGuiWindowFlags_NoMove};
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }
@@ -335,7 +348,7 @@ namespace ThemeDetailsPopup {
                 break;
 
             case State::error:
-                ImGui::TextWrapped("Error: %s", error.data());
+                ImGui::FormatTextWrapped("Error: {}", error);
                 break;
 
             case State::ready_themezer:

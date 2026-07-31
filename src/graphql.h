@@ -15,14 +15,16 @@
 
 #include <curl/curl.h>
 
-#include <glaze/json/generic.hpp>
+#include <glaze/json/generic_fwd.hpp>
 
 namespace graphql {
 
-    using data_function_sig = void (const glz::generic& data);
+    using generic = glz::generic_u64;
+
+    using data_function_sig = void (const generic& data);
     using data_function_t = std::move_only_function<data_function_sig>;
 
-    using errors_function_sig = void (const glz::generic& errors);
+    using errors_function_sig = void (const generic& errors);
     using errors_function_t = std::move_only_function<errors_function_sig>;
 
     using exception_function_sig = void (const std::exception& error);
@@ -90,7 +92,7 @@ namespace graphql {
     token
     get_async(const std::string& url,
               const std::string& query,
-              const glz::generic& variables,
+              const generic& variables,
               data_function_t data_func,
               errors_function_t errors_func,
               exception_function_t exception_func = {});
@@ -104,14 +106,14 @@ namespace graphql {
               exception_function_t exception_func = {});
 
 
-    glz::generic
+    generic
     get_sync(const std::string& url,
              const std::string& query,
-             const glz::generic& variables);
+             const generic& variables);
 
-    glz::generic
+    generic
     get_sync(const std::string& url,
              const std::string& query,
              const std::string& variables_json);
 
-}
+} // graphql

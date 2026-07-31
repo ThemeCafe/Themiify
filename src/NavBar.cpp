@@ -14,6 +14,7 @@
 #include "App.h"
 #include "screens/ConfirmExitPopup.h"
 #include "tracer.hpp"
+#include "UI.h"
 #include "utils.h"
 
 #include <SDL_image.h>
@@ -29,7 +30,7 @@ using std::cout;
 using std::endl;
 
 namespace NavBar {
-    SDL_Texture *logo_tex;
+    SDL_Texture *icon_tex;
 
     SDL_Texture *home_button_normal_tex;
     SDL_Texture *home_button_active_tex;
@@ -51,7 +52,7 @@ namespace NavBar {
     void initialize(SDL_Renderer *renderer) {
         TRACE_FUNC;
 
-        logo_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/logo.png");
+        icon_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/themiify-icon.png");
 
         home_button_normal_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/home-button-normal.png");
         home_button_active_tex = IMG_LoadTexture(renderer, "fs:/vol/content/ui/home-button-active.png");
@@ -72,7 +73,7 @@ namespace NavBar {
     void finalize() {
         TRACE_FUNC;
 
-        SDL_DestroyTexture(logo_tex);
+        SDL_DestroyTexture(icon_tex);
 
         SDL_DestroyTexture(home_button_normal_tex);
         SDL_DestroyTexture(home_button_active_tex);
@@ -100,7 +101,7 @@ namespace NavBar {
 #ifdef DEBUG_BG_COLOR
         StyleColor navbar_bg{ImGuiCol_ChildBg, {0.5f, 0.0f, 0.0f, 1.0f}};
 #endif
-        const float navbar_width = 160;
+        const float navbar_width = 160 - 8;
 
         Child nav_bar{"NavBar", {navbar_width, 0},
                       ImGuiChildFlags_NavFlattened,
@@ -113,7 +114,7 @@ namespace NavBar {
         StyleVar no_frame_rounding{ImGuiStyleVar_FrameRounding, 0};
         StyleVar no_frame_padding{ImGuiStyleVar_FramePadding, {0, 0}};
 
-        ImGui::Image(logo_tex, {152.4f, 138.0f});
+        ImGui::Image(icon_tex, {152.4f, 138.0f});
 
         const auto &style = ImGui::GetStyle();
         const auto available = ImGui::GetContentRegionAvail();
@@ -132,46 +133,64 @@ namespace NavBar {
 #endif
         if (Child buttons_box{"ButtonsBox", {navbar_width, 0}, ImGuiChildFlags_NavFlattened}) {
             if (current_tab == Tab::home) {
-                ImGui::ImageButton("home_button_active", home_button_active_tex, button_size);
+                ImGui::ImageButton("home_button_active",
+                                   home_button_active_tex,
+                                   button_size);
             }
             else {
                 // TODO: Implement the App::ImageButton overload in the App namespace to
                 // add the sound effect and rumble when clicked
-                if (ImGui::ImageButton("home_button_normal", home_button_normal_tex, button_size)) {
-                    current_tab = Tab::home;
+                if (ImGui::ImageButton("home_button_normal",
+                                       home_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::home);
                 }
             }
 
             if (current_tab == Tab::manage_themes) {
-                ImGui::ImageButton("installed_button_active", manage_themes_button_active_tex, button_size);
+                ImGui::ImageButton("installed_button_active",
+                                   manage_themes_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("installed_button_normal", manage_themes_button_normal_tex, button_size)) {
-                    current_tab = Tab::manage_themes;
+                if (ImGui::ImageButton("installed_button_normal",
+                                       manage_themes_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::manage_themes);
                 }
             }
 
             if (current_tab == Tab::themezer) {
-                ImGui::ImageButton("themezer_button_active", themezer_button_active_tex, button_size);
+                ImGui::ImageButton("themezer_button_active",
+                                   themezer_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("themezer_button_normal", themezer_button_normal_tex, button_size)) {
-                    current_tab = Tab::themezer;
+                if (ImGui::ImageButton("themezer_button_normal",
+                                       themezer_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::themezer);
                 }
             }
 
             if (current_tab == Tab::settings) {
-                ImGui::ImageButton("settings_button_active", settings_button_active_tex, button_size);
+                ImGui::ImageButton("settings_button_active",
+                                   settings_button_active_tex,
+                                   button_size);
             }
             else {
-                if (ImGui::ImageButton("settings_button_normal", settings_button_normal_tex, button_size)) {
-                    current_tab = Tab::settings;
+                if (ImGui::ImageButton("settings_button_normal",
+                                       settings_button_normal_tex,
+                                       button_size)) {
+                    set_current_tab(Tab::settings);
                 }
             }
 
             ImGui::Separator();
 
-            if (ImGui::ImageButton("exit_button_normal", exit_button_normal_tex, button_size)) {
+            if (ImGui::ImageButton("exit_button_normal",
+                                   exit_button_normal_tex,
+                                   button_size)) {
                 ConfirmExitPopup::open();
             }
         }
@@ -182,6 +201,7 @@ namespace NavBar {
     }
 
     void set_current_tab(Tab tab) {
+        UI::PlaySFXTabSwitch();
         current_tab = tab;
     }
 }

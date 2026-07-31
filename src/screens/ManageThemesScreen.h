@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 namespace ManageThemesScreen {
     void initialize(SDL_Renderer *renderer);
@@ -17,4 +17,6 @@ namespace ManageThemesScreen {
     void finalize();
 
     void process_ui();
+
+    void request_update_check();
 }

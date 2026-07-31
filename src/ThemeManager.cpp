@@ -234,9 +234,6 @@ namespace ThemeManager {
         TaskReportInstallProgress(const InstallContextPtr& ctx,
                                   const std::string& msg);
 
-        std::string
-        to_string(Hips::Result res);
-
         void
         UninstallThread(ConstThemePtr theme);
 
@@ -774,25 +771,6 @@ namespace ThemeManager {
                 ctx->progress_func(msg);
         }
 
-        std::string
-        to_string(Hips::Result res) {
-            switch (res) {
-                using enum Hips::Result;
-                case Success:
-                    return "success";
-                case InvalidPatch:
-                    return "invalid patch";
-                case UnknownFormat:
-                    return "unknown format";
-                case SizeMismatch:
-                    return "size mismatch";
-                case ChecksumMismatch:
-                    return "checksum mismatch";
-                default:
-                    return "unknown error";
-            }
-        }
-
         void
         UninstallThread(ConstThemePtr theme) {
             try {
@@ -921,17 +899,12 @@ namespace ThemeManager {
     }
 
     std::filesystem::path
-    CalcUThemePath(const std::string& slug,
-                   const std::string& hexId) {
-        std::string filename = slug;
-        if (!hexId.empty())
-            filename += "-" + hexId;
-
-        if (filename.empty())
-            filename = "no-slug-or-id"; // TODO: generate random name?
-
-        filename += ".utheme";
-
+    CalcUThemePath() {
+        auto now = std::chrono::system_clock::now();
+        auto today = std::chrono::floor<std::chrono::days>(now);
+        std::chrono::year_month_day date = today;
+        std::chrono::hh_mm_ss time{now - today};
+        std::string filename = std::format("download-{}-{}.utheme", date, time);
         return THEMES_ROOT / SanitizeElement(filename);
     }
 
@@ -945,12 +918,16 @@ namespace ThemeManager {
                 return THEMES_ROOT / SanitizeElement(filename);
             }
         }
+        return CalcUThemePath(); // generate filename using date and time
+    }
 
-        auto now = std::chrono::system_clock::now();
-        auto today = std::chrono::floor<std::chrono::days>(now);
-        std::chrono::year_month_day date = today;
-        std::chrono::hh_mm_ss time{now - today};
-        std::string filename = std::format("download-{}-{}.utheme", date, time);
+    std::filesystem::path
+    CalcUThemePath(const std::string& name,
+                   const std::string& id) {
+        std::string filename = join({name, id}, "-");
+        if (filename.empty())
+            return CalcUThemePath(); // generate filename using date and time
+        filename += ".utheme";
         return THEMES_ROOT / SanitizeElement(filename);
     }
 
@@ -1009,8 +986,8 @@ namespace ThemeManager {
     void
     ForEachInstalledTheme(const ThemeFunction& func) {
         auto themes = safe_themes_map.lock();
-        for (auto [index, path_theme] : *themes | std::views::enumerate)
-            func(index, path_theme.second);
+        for (const auto& [path, theme] : *themes)
+            func(theme);
     }
 
     ConstThemePtr
@@ -1069,8 +1046,8 @@ namespace ThemeManager {
     void
     ForEachUTheme(const MetadataFunction& func) {
         auto uthemes = safe_uthemes_map.lock();
-        for (auto [index, path_meta] : *uthemes | std::views::enumerate)
-            func(index, path_meta.first, path_meta.second);
+        for (const auto& [path, meta] : *uthemes)
+            func(path, meta);
     }
 
 } // namespace ThemeManager

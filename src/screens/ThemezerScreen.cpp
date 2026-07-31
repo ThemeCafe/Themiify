@@ -20,7 +20,7 @@
 #include <imgui.h>
 #include <imgui_raii.h>
 
-#include <SDL2/SDL_image.h>
+#include <SDL_image.h>
 
 #include "ThemezerScreen.h"
 
@@ -30,6 +30,7 @@
 #include "../ThemeManager.h"
 #include "../ThemezerAPI.h"
 #include "../tracer.hpp"
+#include "../UI.h"
 #include "../utils.h"
 #include "DownloadThemePopup.h"
 #include "InstallThemePopup.h"
@@ -54,28 +55,29 @@ namespace ThemezerScreen {
     bool first_fetch = true;
     uint32_t page = 0;
 
-    ItemSort sort = ItemSort::CREATED;
+    ItemSort sort = ItemSort::TRENDING;
     SortOrder order = SortOrder::DESC;
 
     std::string query;
-    std::string quickid_query;
+    std::string quick_id_query;
 
-    bool fetching_theme_by_id = false;
-    bool exact_id_mode = false;
     bool scroll_to_top = false;
 
     std::optional<PageInfo> page_info;
     std::optional<WiiuThemeSmallVec> themes;
-    std::optional<WiiuThemeSmall> exact_theme;
 
     SDL_Texture* themezer_logo = nullptr;
 
     std::string sort_to_label(ItemSort arg) {
         switch (arg) {
-            case ItemSort::CREATED:   return "Created";
-            case ItemSort::DOWNLOADS: return "Downloads";
-            case ItemSort::SAVES:     return "Saves";
-            case ItemSort::UPDATED:   return "Updated";
+            using enum ItemSort;
+            case COLOR_SIMILARITY: return "Color similarity";
+            case CREATED:          return "Created";
+            case DOWNLOADS:        return "Downloads";
+            case RISING:           return "Rising";
+            case SAVES:            return "Saves";
+            case TRENDING:         return "Trending";
+            case UPDATED:          return "Updated";
             default: throw std::logic_error{"invalid"};
         }
     }
@@ -104,34 +106,26 @@ namespace ThemezerScreen {
         return small;
     }
 
-    void fetch_theme_by_id(const std::string& hex_id) {
-        fetching_theme_by_id = true;
-        exact_id_mode = true;
-        exact_theme.reset();
-
-        // TODO: should have an error handler too
-        ThemezerAPI::wiiu::theme(
-            hex_id,
-            [](const WiiuThemeFull& full_theme) {
-                cout << "Got exact theme by ID!" << endl;
-
-                exact_theme = full_to_small(full_theme);
-                fetching_theme_by_id = false;
-            }
-        );
+    void
+    fetch_theme_by_quick_id(const std::string& quick_id) {
+        // Note: start a download imediately from the response, don't show anything.
+        ThemezerAPI::wiiu::lookupByQuickId(
+            quick_id,
+            [](const ThemezerAPI::WiiuInstallThemeLookup& theme)
+            {
+                DownloadThemePopup::open(theme);
+            });
     }
 
     void fetch_page(unsigned new_page) {
         if (!new_page)
             return;
 
-        page = new_page;
-
         // TODO: should have an error handler too.
         ThemezerAPI::wiiu::themes({
                 .paginationArgs = {
                     .limit = 21,
-                    .page = page,
+                    .page = new_page,
                 },
                 .sort = sort,
                 .order = order,
@@ -140,6 +134,7 @@ namespace ThemezerScreen {
             [](const WiiuThemeSmallVec& new_themes,
                const PageInfo& new_page_info)
             {
+                page = new_page_info.page;
                 page_info = new_page_info;
                 themes = new_themes;
 
@@ -164,14 +159,6 @@ namespace ThemezerScreen {
         }
     }
 
-    static void text_limited(float width, const std::string& text) {
-        // WORKAROUND: prevent tooltip.
-        auto& io = ImGui::GetIO();
-        auto old_mouse_pos = io.MousePos;
-        ImGui::TextAligned(0.0f, width, text);
-        io.MousePos = old_mouse_pos;
-    }
-
     void show(const WiiuThemeSmall& theme,
               const ImVec2& inner_size,
               const ImVec2& padding) {
@@ -193,15 +180,18 @@ namespace ThemezerScreen {
         ImVec2 start_pos = padding;
 
         ImGui::SetCursorPos({0, 0});
-        if (ImGui::Button("##button", outer_size)) {
+        if (UI::Button("##button", outer_size)) {
             ThemeDetailsPopup::open_themezer(theme);
         }
 
-        // NOTE: when hovered or activated, change the text color to the window bg color.
+        // NOTE: when hovered or activated, make text dark.
+        bool invert_colors = ImGui::IsItemHovered() || ImGui::IsItemActive();
+        const auto& colors = style.Colors;
+        // const auto light_color = colors[ImGuiCol_ButtonActive];
+        const auto dark_color = colors[ImGuiCol_WindowBg];
         std::optional<StyleColor> dark_text;
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive()) {
-            const auto& colors = style.Colors;
-            dark_text.emplace(ImGuiCol_Text, colors[ImGuiCol_WindowBg]);
+        if (invert_colors) {
+            dark_text.emplace(ImGuiCol_Text, dark_color);
         }
 
         ImGui::SetCursorPos(start_pos);
@@ -226,19 +216,21 @@ namespace ThemezerScreen {
                 if (itheme->metadata.themeVersion != theme.updatedAt
                     ||
                     !itheme->legacyMetadataPath.empty()) {
-                    status_label = ICON_FA_REFRESH;
-                    status_color = { 1.0f, 0.7f, 0.0f, 1.0f };
+                    status_label = UI::update_icon;
+                    status_color = UI::update_color;
                 } else {
-                    status_label = ICON_FA_CHECK;
-                    status_color = { 0.0f, 1.0f, 0.3f, 1.0f };
+                    status_label = UI::installed_icon;
+                    status_color = UI::installed_color;
                 }
             }
+            if (invert_colors)
+                status_color = dark_color;
 
             float name_width = inner_size.x;
             if (!status_label.empty())
                 name_width -= style.ItemSpacing.x + ImGui::CalcTextSize(status_label).x;
 
-            text_limited(name_width, theme.name);
+            ImGui::TextAligned(0, name_width, theme.name);
 
             if (!status_label.empty()) {
                 ImGui::SameLine();
@@ -259,7 +251,7 @@ namespace ThemezerScreen {
             float downloads_width = ImGui::CalcTextSize(downloads_label).x;
 
             float author_width = inner_size.x - downloads_width - style.ItemSpacing.x;
-            text_limited(author_width, "by " + theme.creator.username);
+            ImGui::TextAligned(0, author_width, "by " + theme.creator.username);
 
             ImGui::SameLine();
 
@@ -278,17 +270,17 @@ namespace ThemezerScreen {
         SDL_WiiUSetSWKBDOKLabel("Search");
         SDL_WiiUSetSWKBDHighlightInitialText(SDL_TRUE);
 
-        /*-------------------------------------------------------------------------------.
-        | Layout:                                                                        |
-        |                                                                                |
-        | [SEARCH] [QUICKID] [QR] [SORT] [REVERSE] [NAV-PREV] [NAV-PAGE] [NAV-NEXT]      |
-        |                                                                                |
-        | Only SEARCH is stretched, so we need to calculate the width of everything that |
-        | comes after.                                                                   |
-        `-------------------------------------------------------------------------------*/
+        /*--------------------------------------------------------------------------------.
+        | Layout:                                                                         |
+        |                                                                                 |
+        | [SEARCH] [QUICKID] [QR] [SORT] [REVERSE] [NAV-PREV] [NAV-PAGE] [NAV-NEXT]       |
+        |                                                                                 |
+        | SEARCH is stretched, so we need to calculate the width of everything that comes |
+        | after.                                                                          |
+        `--------------------------------------------------------------------------------*/
 
-        const std::string quickid_label = "QuickID";
-        const auto quickid_size = ImGui::CalcTextSize(quickid_label) + 2 * style.FramePadding;
+        const std::string quick_id_label = "QuickID";
+        const auto quick_id_size = ImGui::CalcTextSize(quick_id_label) + 2 * style.FramePadding;
 
         const std::string qr_label = ICON_FA_QRCODE;
         const auto qr_size = ImGui::CalcTextSize(qr_label) + 2 * style.FramePadding;
@@ -305,9 +297,7 @@ namespace ThemezerScreen {
         const auto nav_next_size = ImGui::CalcTextSize(nav_next_label) + 2 * style.FramePadding;
 
         std::string nav_page_label;
-        if (exact_id_mode) {
-            nav_page_label = "";
-        } else if (page_info) {
+        if (page_info) {
             nav_page_label =
                 "Page "s
                 + std::to_string(page_info->page)
@@ -320,7 +310,7 @@ namespace ThemezerScreen {
         const float search_width =
             ImGui::GetContentRegionAvail().x
             - space
-            - quickid_size.x
+            - quick_id_size.x
             - space
             - qr_size.x
             - space
@@ -340,11 +330,6 @@ namespace ThemezerScreen {
             ImGui::SetNextItemWidth(search_width);
             if (ImGui::InputTextWithHint("##network_search"s, "Search..."s, query)) {
                 cout << "Searching: " << query << endl;
-
-                exact_id_mode = false;
-                exact_theme.reset();
-                fetching_theme_by_id = false;
-
                 fetch_page(1);
             }
         }
@@ -354,19 +339,19 @@ namespace ThemezerScreen {
         {
             Disabled disable_if{themezer_busy};
 
-            ImGui::SetNextItemWidth(quickid_size.x);
-            if (ImGui::InputTextWithHint("##id_search"s, quickid_label, quickid_query)) {
-                if (quickid_query.starts_with("T") || quickid_query.starts_with("t")) {
-                    cout << "Searching QuickID: " << quickid_query << endl;
-                    std::string hexId = as_upper_case(quickid_query.substr(1));
-                    fetch_theme_by_id(hexId);
+            ImGui::SetNextItemWidth(quick_id_size.x);
+            if (ImGui::InputTextWithHint("##quick_id_search"s, quick_id_label, quick_id_query)) {
+                if (!quick_id_query.empty()) {
+                    cout << "Searching QuickId: " << quick_id_query << endl;
+                    quick_id_query = as_upper_case(quick_id_query);
+                    fetch_theme_by_quick_id(quick_id_query);
                 }
             }
         }
 
         ImGui::SameLine();
 
-        if (ImGui::Button(qr_label, qr_size))
+        if (UI::Button(qr_label, qr_size))
             QRCodePopup::open();
 
         ImGui::SameLine();
@@ -377,31 +362,23 @@ namespace ThemezerScreen {
             ImGui::SetNextItemWidth(sort_width);
             if (Combo sort_combo{"##sort_combo"s, sort_to_label(sort)}) {
                 for (auto new_sort : ThemezerAPI::ItemSortList) {
-                    if (ImGui::Selectable(sort_to_label(new_sort),
-                                          new_sort == sort)) {
+                    if (UI::Selectable(sort_to_label(new_sort),
+                                       new_sort == sort)) {
                         sort = new_sort;
-
-                        exact_id_mode = false;
-                        exact_theme.reset();
-                        fetching_theme_by_id = false;
-
                         fetch_page(1);
                     }
                 }
             }
+            if (ImGui::IsItemClicked())
+                UI::PlaySFXClick();
         }
 
         ImGui::SameLine();
 
         {
             Disabled disable_if{themezer_busy};
-            if (ImGui::Button(reverse_label, reverse_size)) {
+            if (UI::Button(reverse_label, reverse_size)) {
                 order = order == SortOrder::ASC ? SortOrder::DESC : SortOrder::ASC;
-
-                exact_id_mode = false;
-                exact_theme.reset();
-                fetching_theme_by_id = false;
-
                 fetch_page(1);
             }
         }
@@ -410,7 +387,7 @@ namespace ThemezerScreen {
 
         // Navigation controls
         {
-            Disabled disabled_if{themezer_busy || exact_id_mode};
+            Disabled disabled_if{themezer_busy};
 
             {
                 bool first_page = true;
@@ -419,7 +396,7 @@ namespace ThemezerScreen {
 
                 Disabled disable_if{first_page};
 
-                if (ImGui::Button(nav_prev_label, nav_prev_size))
+                if (UI::Button(nav_prev_label, nav_prev_size))
                     fetch_page(page - 1);
             }
 
@@ -436,7 +413,7 @@ namespace ThemezerScreen {
 
                 Disabled disable_if{last_page};
 
-                if (ImGui::Button(nav_next_label, nav_next_size))
+                if (UI::Button(nav_next_label, nav_next_size))
                     fetch_page(page + 1);
             }
         }
@@ -452,9 +429,7 @@ namespace ThemezerScreen {
 #ifdef DEBUG_BG_COLOR
             StyleColor green_bg{ImGuiCol_ChildBg, {0.0, 0.5, 0.0, 1.0}};
 #endif
-            auto &style = ImGui::GetStyle();
-            // Remove horizontal padding.
-            StyleVar no_hori_padding{ImGuiStyleVar_WindowPadding, {0, style.WindowPadding.y}};
+            StyleVar padding{ImGuiStyleVar_WindowPadding, {6, 6}};
             if (Child themezer_content{"ThemezerContent",
                                        {0, 0},
                                        ImGuiChildFlags_NavFlattened |
@@ -483,46 +458,18 @@ namespace ThemezerScreen {
                         const ImVec2 inner_size = {320, 260};
                         const ImVec2 padding = {12, 12};
 
-                        if (exact_id_mode) {
-                            if (fetching_theme_by_id) {
-                                ImGui::Text("Searching by exact Themezer ID...");
-                                if (ImGui::Button("Cancel Search")) {
-                                    exact_id_mode = false;
-                                    query.clear();
-                                    quickid_query.clear();
-                                    fetch_page(1);
-                                }
-                            }
-                            else if (exact_theme) {
-                                show(*exact_theme, inner_size, padding);
-                                ImGui::Spacing();
-                                if (ImGui::Button("Clear Search")) {
-                                    exact_id_mode = false;
-                                    query.clear();
-                                    quickid_query.clear();
-                                    fetch_page(1);
-                                }
-                            }
-                            else {
-                                ImGui::Text("No theme found for this Themezer ID.");
-                            }
+                        if (!themes) {
+                            ImGui::Text("Waiting for Themezer to respond...");
                         }
                         else {
-                            auto& new_themes = themes;
-
-                            if (!new_themes) {
-                                ImGui::Text("Waiting for Themezer to respond...");
-                            }
-                            else {
-                                const ImVec2 grid_start_pos = ImGui::GetCursorPos();
-                                const ImVec2 outer_size = inner_size + 2 * padding;
-                                const ImVec2 spacing = {18, 18};
-                                for (auto [idx, theme] : *new_themes | std::views::enumerate) {
-                                    ImVec2 grid_pos = { float(idx % 3), float(idx / 3) };
-                                    ImVec2 pos = grid_pos * (outer_size + spacing);
-                                    ImGui::SetCursorPos(grid_start_pos + pos);
-                                    show(theme, inner_size, padding);
-                                }
+                            const ImVec2 grid_start_pos = ImGui::GetCursorPos();
+                            const ImVec2 outer_size = inner_size + 2 * padding;
+                            const ImVec2 spacing = {15, 15};
+                            for (auto [idx, theme] : *themes | std::views::enumerate) {
+                                ImVec2 grid_pos = { float(idx % 3), float(idx / 3) };
+                                ImVec2 pos = grid_pos * (outer_size + spacing);
+                                ImGui::SetCursorPos(grid_start_pos + pos);
+                                show(theme, inner_size, padding);
                             }
                         }
                     }

@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 namespace HomeScreen {
     void initialize(SDL_Renderer *renderer);

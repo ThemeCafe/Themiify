@@ -10,6 +10,7 @@
 #include "App.h"
 
 #include "Camera.h"
+#include "Config.h"
 #include "ContentPanel.h"
 #include "DownloadManager.h"
 #include "ImageLoader.h"
@@ -18,14 +19,13 @@
 #include "ThemeManager.h"
 #include "ThemezerAPI.h"
 #include "timer.hpp"
+#include "UI.h"
 #include "utils.h"
 #include "screens/QRCodePopup.h"
 #include "screens/ConfirmExitPopup.h"
 
-#include <chrono>
-#include <fstream>
 #include <iostream>
-#include <span>
+#include <string>
 #include <vector>
 
 #include <coreinit/memory.h>
@@ -34,10 +34,10 @@
 
 #include <mocha/mocha.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_syswm.h>
+#include <SDL_image.h>
+#include <SDL_mixer.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -66,6 +66,9 @@ using std::endl;
 using namespace std::literals;
 
 namespace App {
+
+    const std::string user_agent = "Themiify/" THEMIIFY_VERSION " (Wii U)";
+
     SDL_Window *window;
     SDL_Renderer *renderer;
 
@@ -199,13 +202,13 @@ namespace App {
         fontConfig.EllipsisChar = U'…';
 #ifdef IMGUI_ENABLE_FREETYPE
         // WORKAROUND: the freetype backend seems to misalign fonts merged with FontAwesome
-        fontConfig.GlyphOffset.y = -style.FontSizeBase * (1.0f / 8.0f);
+        fontConfig.GlyphOffset.y = - style.FontSizeBase * (1.0f / 8.0f);
 #endif
         void *fontData = nullptr;
         uint32_t fontSize = 0;
         OSGetSharedData(OS_SHAREDDATATYPE_FONT_STANDARD, 0, &fontData, &fontSize);
-
         io.Fonts->AddFontFromMemoryTTF(fontData, fontSize, style.FontSizeBase, &fontConfig);
+
         fontConfig.MergeMode = true;
         io.Fonts->AddFontFromFileTTF("fs:/vol/content/fonts/fontawesome-webfont.ttf", style.FontSizeBase, &fontConfig);
         io.Fonts->AddFontFromFileTTF("fs:/vol/content/fonts/InterVariable.ttf", style.FontSizeBase, &fontConfig);
@@ -217,6 +220,9 @@ namespace App {
 
     void initialize() {
         std::filesystem::create_directories(THEMIIFY_ROOT);
+
+        // Initialize Config module before everything else.
+        Config::initialize();
 
         MochaUtilsStatus res;
         if ((res = Mocha_InitLibrary()) != MOCHA_RESULT_SUCCESS) {
@@ -255,31 +261,32 @@ namespace App {
         ThemeManager::initialize();
 
         DownloadManager::initialize(user_agent);
-        ImageLoader::initialize(renderer);
+        ImageLoader::initialize(renderer, user_agent);
+        UI::initialize();
         NavBar::initialize(renderer);
         ContentPanel::initialize(renderer);
 
         // Register proc_ui callback for camera
         ProcUIRegisterCallback(PROCUI_CALLBACK_ACQUIRE, &procCallbackAcquire, nullptr, 1);
 
-        // Start playing bg music, AFTER settings are initialized (through the ContentPanel).
-        {
-            std::filebuf music_filebuf;
-            if (music_filebuf.open("fs:/vol/content/sound/bgm.mp3",
-                                   std::ios::in | std::ios::binary)) {
-                char buf[4096];
-                std::streamsize read;
-                while ((read = music_filebuf.sgetn(buf, sizeof buf)) > 0)
-                    bgMusicData.append_range(std::span(buf, read));
-                auto rwops = SDL_RWFromConstMem(bgMusicData.data(), bgMusicData.size());
-                bgMusic = Mix_LoadMUS_RW(rwops, 1);
-                if (bgMusic)
-                    Mix_PlayMusic(bgMusic, -1);
-                else
-                    cerr << "Failed to load bgm: " << SDL_GetError() << endl;
-            } else {
-                cerr << "Failed to open bgm.mp3" << endl;
-            }
+        // Start playing bg music, AFTER Config is initialized.
+        update_mixer_volumes();
+        bgMusicData = load_file(THEMIIFY_ROOT / "bgm.mp3");
+        if (bgMusicData.empty())
+            bgMusicData = load_file(THEMIIFY_ROOT / "bgm.ogg");
+        if (bgMusicData.empty())
+            bgMusicData = load_file(THEMIIFY_ROOT / "bgm.opus");
+        if (bgMusicData.empty())
+            bgMusicData = load_file("fs:/vol/content/sound/bgm.mp3");
+        if (!bgMusicData.empty()) {
+            auto rwops = SDL_RWFromConstMem(bgMusicData.data(), bgMusicData.size());
+            bgMusic = Mix_LoadMUS_RW(rwops, 1);
+            if (bgMusic)
+                Mix_PlayMusic(bgMusic, -1);
+            else
+                cerr << "Failed to load bgm: " << SDL_GetError() << endl;
+        } else {
+            cerr << "No bgm found!" << endl;
         }
     }
 
@@ -290,9 +297,11 @@ namespace App {
             Mix_FreeMusic(bgMusic);
             bgMusic = nullptr;
         }
+        bgMusicData.clear();
 
         NavBar::finalize();
         ContentPanel::finalize();
+        UI::finalize();
         ThemeManager::finalize();
         PluginManager::finalize();
         ImageLoader::finalize();
@@ -316,6 +325,8 @@ namespace App {
 
         Mocha_UnmountFS("storage_mlc");
         Mocha_DeInitLibrary();
+
+        Config::finalize();
     }
 
     bool run() {
@@ -412,7 +423,7 @@ namespace App {
                     StyleVar restore_border{ImGuiStyleVar_WindowBorderSize, orig_border};
                     StyleVar restore_rounding{ImGuiStyleVar_WindowRounding, orig_rounding};
                     NavBar::process_ui();
-                    ImGui::SameLine(0, 9); // NOTE: override ItemSpacing
+                    ImGui::SameLine(0, 6); // NOTE: override ItemSpacing
                     {
 #ifdef MEASURE_RENDER_TIME
                         TimerReporter slow_content{std::cout,
@@ -451,5 +462,15 @@ namespace App {
 
     void quit() {
         isRunning = false;
+    }
+
+    void update_mixer_volumes() {
+        using Config::cfg;
+
+        int mix_music_volume = cfg.music_volume * MIX_MAX_VOLUME / 100;
+        Mix_VolumeMusic(mix_music_volume);
+
+        int mix_sfx_volume = cfg.sfx_volume * MIX_MAX_VOLUME / 100;
+        Mix_MasterVolume(mix_sfx_volume);
     }
 }

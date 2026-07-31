@@ -17,8 +17,10 @@
 #include <cafe_glyphs.h>
 
 #include "ThemePreviewPopup.h"
+
 #include "../ImageLoader.h"
 #include "../IconsFontAwesome4.h"
+#include "../UI.h"
 
 using std::cout;
 using std::endl;
@@ -30,12 +32,12 @@ namespace ThemePreviewPopup {
 
         enum class State {
             hidden,
+            queued,
             visible,
         };
 
         State state;
 
-        bool popup_queued;
         const std::string popup_id = "ThemePreviewPopup"s;
 
         std::string unique_id;
@@ -52,22 +54,20 @@ namespace ThemePreviewPopup {
             StyleColor button_hovered {ImGuiCol_ButtonHovered, {0.0f, 0.0f, 0.0f, 0.7f}};
             StyleColor button_active  {ImGuiCol_ButtonActive,  {0.0f, 0.0f, 0.0f, 0.9f}};
             ImGui::SetCursorScreenPos({x, y});
-            return ImGui::Button(label, size);
+            return UI::Button(label, size);
         }
 
     } // namespace
 
     void open(const std::string& id, const std::vector<std::string>& images) {
-        state = State::visible;
-        popup_queued = true;
+        state = State::queued;
         hide_ui = false;
         unique_id = id;
         image_list = images;
     }
 
     void open(const std::string& id, const std::vector<std::filesystem::path>& images) {
-        state = State::visible;
-        popup_queued = true;
+        state = State::queued;
         hide_ui = false;
         unique_id = id;
         image_list.clear();
@@ -81,9 +81,9 @@ namespace ThemePreviewPopup {
             return;
         }
 
-        if (popup_queued) {
-            ImGui::OpenPopup(popup_id);
-            popup_queued = false;
+        if (state == State::queued) {
+            UI::OpenPopup(popup_id);
+            state = State::visible;
         }
 
         const auto &style = ImGui::GetStyle();
@@ -98,6 +98,8 @@ namespace ThemePreviewPopup {
                     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNavInputs};
 
         if (!popup) {
+            // ImGui closed the popup
+            UI::PlaySFXPopupClose();
             state = State::hidden;
             return;
         }
@@ -159,8 +161,10 @@ namespace ThemePreviewPopup {
                 if (overlay_button(CAFE_GLYPH_BTN_B " Close",
                                    start_x,
                                    y,
-                                   button_size))
-                    ImGui::CloseCurrentPopup();
+                                   button_size)) {
+                    UI::CloseCurrentPopup();
+                    state = State::hidden;
+                }
 
                 if (overlay_button(CAFE_GLYPH_BTN_X " Hide",
                                    start_x + button_size.x + spacing +
