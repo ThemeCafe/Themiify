@@ -18,7 +18,7 @@ Themiify will only work if you have the StyleMiiU aroma plugin installed and if 
 
 ### Home Tab
 
-![[Themiify Home Screen](hbas/screenshot-1.png)]
+![Themiify Home Screen](hbas/screenshot-1.png)]
 
 This shows the current theme set in StyleMiiU.
 
@@ -27,14 +27,14 @@ This shows the current theme set in StyleMiiU.
 You can install `.utheme` files placed in `sd:/wiiu/themes` from this tab. You can also manage your installed themes here with the ability to either delete them or
 set them as your current StyleMiiU theme on the fly.
 
-![[Themiify Manage Themes Screen](hbas/screenshot-2.png)]
+![Themiify Manage Themes Screen](hbas/screenshot-2.png)]
 
 ### Network Tab
 You can download themes uploaded to Themezer from this tab. To search for more specific themes you can use different filters, the search bar or QR codes.
 
-![[Themiify Themezer Screen](hbas/screenshot-3.png)]
+![Themiify Themezer Screen](hbas/screenshot-3.png)]
 
-![[Themiify Theme Details Popup](hbas/screenshot-4.png)]
+![Themiify Theme Details Popup](hbas/screenshot-4.png)]
 
 ### Settings Tab
 
