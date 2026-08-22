@@ -127,7 +127,7 @@ namespace DownloadManager {
             if (self->content_started && dltotal)
                 self->info->progress = float(dlnow) / float(dltotal);
 
-            double speed = 0.0;
+            curl_off_t speed = 0;
 
             if (self->easy)
                 curl_easy_getinfo(self->easy, CURLINFO_SPEED_DOWNLOAD_T, &speed);
