@@ -94,8 +94,7 @@ target_include_directories(cafe_glyphs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/caf
 
 # wiiu-stdout
 add_library(wiiu-stdout STATIC
-    wiiu-stdout/cpp/wiiu-stderr.cpp
-    wiiu-stdout/cpp/wiiu-stdout.cpp
+    wiiu-stdout/wiiu-stdout.c
 )
 
-target_include_directories(wiiu-stdout INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/wiiu-stdout/cpp)
+target_include_directories(wiiu-stdout INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/wiiu-stdout)
