@@ -9,14 +9,12 @@
 
 #include "App.h"
 
-#include <wiiu-stdout.hpp>
-#include <wiiu-stderr.hpp>
+#include <wiiu-stdout.h>
 
 int main()
 {
 #ifdef __WIIU__
     wiiu_init_stdout();
-    wiiu_init_stderr();
 #endif
 
     App::initialize();
