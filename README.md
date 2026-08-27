@@ -52,6 +52,9 @@ For further information on usage and troubleshooting of Themiify, please consult
 To build Themiify please ensure you have the following packages installed via the dkp-pacman package manager: `ppc-bz2`, `ppc-zlib`, `ppc-freetype2`,
 `ppc-harfbuzz`, `ppc-libpng`, `ppc-libzip`, `wut`, `wiiu-sdl2`, `wiiu-libcurl`, `wiiu-sdl2_mixer` & `wiiu-sdl2_image`.
 
+*Note: The current devkitPro SDL_Mixer package may have problems loading `.flac` audio files. Users wanting to compile Themiify with proper `.flac` support
+may want to use [this package](https://github.com/dkosmari/wiiu-sdl2_mixer-package/tree/main) as an alternative, although it is not required.*
+
 Then simply run:
 
 ```shell
