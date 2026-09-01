@@ -47,7 +47,7 @@ For further information on usage and troubleshooting of Themiify, please consult
 
 ## Building
 
-### Makefile
+### CMake
 
 To build Themiify please ensure you have the following packages installed via the dkp-pacman package manager: `ppc-bz2`, `ppc-zlib`, `ppc-freetype2`,
 `ppc-harfbuzz`, `ppc-libpng`, `ppc-libzip`, `wut`, `wiiu-sdl2`, `wiiu-libcurl`, `wiiu-sdl2_mixer` & `wiiu-sdl2_image`.
@@ -62,7 +62,7 @@ cmake -S . -B build
 cmake --build build
 ```
 
-### Dockerfile
+### Docker
 
 To build Themiify using docker, please run the following command:
 ```shell
