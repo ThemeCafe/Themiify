@@ -366,7 +366,7 @@ query Theme($hexId: String!) {
             static const std::string query = R"(
 query Themes($order: SortOrder, $paginationArgs: PaginationInput, $query: String, $sort: ItemSort) {
   wiiu {
-    themes(order: $order, paginationArgs: $paginationArgs, query: $query, sort: $sort) {
+    themes(order: $order, paginationArgs: $paginationArgs, query: $query, sort: $sort, isNSFW: false) {
       pageInfo {
         itemCount
         limit
