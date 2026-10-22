@@ -13,6 +13,7 @@
 #include "../tracer.hpp"
 #include "../UI.h"
 #include "DownloadThemePopup.h"
+#include "../utils.h"
 
 #include <iostream>
 #include <cstring>
@@ -117,8 +118,9 @@ namespace QRCodePopup {
                     cout << "QR payload: \"" << payload << "\"" << endl;
                     UI::PlaySFXQRScan();
 
-                    if (payload.starts_with("http://") ||
-                        payload.starts_with("https://")) {
+                    const std::string scheme = as_lower_case(payload.substr(0, 8));
+                    if (scheme.starts_with("http://") ||
+                        scheme.starts_with("https://")) {
                         UI::CloseCurrentPopup(true);
                         DownloadThemePopup::open(payload);
                     } else {
